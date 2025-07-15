@@ -5,7 +5,7 @@ import sys
 c_path = "/home/fforge/Stage-IA3D/scripts/"
 sys.path.append(f"{c_path}/mutations")
 
-import mutation as m
+import mutation
 import mutate_with_rdm as mm
 import create_rdm_bed as crb
 
@@ -23,6 +23,35 @@ logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(message)s"
 )
 
+"""
+This script processes a BED file containing mutation data and generates a new BED-like
+representation with relative coordinates based on a specified chromosomal region.
+It can also handle TSV files and generate a reference sequence from a FASTA file.
+It supports filtering mutations by chromosome and specified start and end positions.
+
+It can also generate random intervals if no BED or TSV file is provided.
+
+Usage:
+    python absolute_to_relative.py --bed <path_to_bed_file> --fasta <path_to_fasta_file> --mut_path <output_directory> --region <chrom:start-end>
+    python absolute_to_relative.py --tsv <path_to_tsv_file> --fasta <path_to_fasta_file> --mut_path <output_directory> --region <chrom:start-end>
+    python absolute_to_relative.py --fasta <path_to_fasta_file> --mut_path <output_directory> --region <chrom:start-end> --excluded_domains <path_to_excluded_domains> --interval_size <size> --nb_intervals <number>
+
+Dependencies:
+    - pysam
+    - BioPython
+    - pandas
+    - mutate_with_rdm (custom module)
+    - create_rdm_bed (custom module)
+    - mutation (custom module)
+
+Notes:
+    - The script expects the input BED or TSV file to have specific columns: 'chrom',
+      'start', 'end', 'name', 'strand', 'operation', and 'sequence'.
+    - The 'chrom' column should contain chromosome names, and 'start' and 'end' columns
+      should contain genomic coordinates.
+    - The output files will be saved in the specified output directory.
+"""
+
 
 def relative_bed(bed: str, 
                  chrom: str, 
@@ -35,16 +64,21 @@ def relative_bed(bed: str,
     representation with relative coordinates based on a specified chromosomal
     region.
     
-    Args:
+    Parameters
+    ----------
         bed (str): Path to the input BED file containing mutation data.
         chrom (str): Chromosome name to filter mutations.
         muttype (str, optional): Type of mutation to inherit. Defaults to "shuffle".
         sequence (str, optional): Sequence information to inherit. Defaults to ".".
         start (int, optional): Start position of the region of interest. Must be provided.
         end (int, optional): End position of the region of interest. Must be provided.
-    Returns:
+    
+    Returns
+    ----------
         str: A string representing the new BED-like data with relative coordinates.
-    Raises:
+    
+    Raises
+    ----------
         AttributeError: If `start` or `end` positions are not provided.
     """
     
@@ -87,21 +121,28 @@ def relative_tsv(tsv: str,
     Processes a tab-separated values (TSV) file to filter and adjust genomic 
     coordinates relative to a specified region.
     
-    Args:
-        tsv (str): Path to the input TSV file containing genomic data. The file 
+    Parameters
+    ----------
+        - tsv (str): 
+            Path to the input TSV file containing genomic data. The file 
             must have the following columns: 'chrom', 'start', 'end', 'name', 
             'strand', 'operation', and 'sequence'.
-        chrom (str, optional): Chromosome name to filter the data. Defaults to None.
-        start (int, optional): Start position of the region of interest. Defaults to None.
-        end (int, optional): End position of the region of interest. Defaults to None.
-    Returns:
+        - chrom (str, optional):
+            Chromosome name to filter the data. Defaults to None.
+        - start (int, optional):
+            Start position of the region of interest. Defaults to None.
+        - end (int, optional):
+            End position of the region of interest. Defaults to None.
+    
+    Returns
+    ----------
         pandas.DataFrame: A DataFrame containing the filtered and adjusted genomic 
-        data with the following modifications:
-            - The 'start' and 'end' columns are adjusted relative to the given 
-              start position.
-            - The 'chrom' column is updated to a fake chromosome name in the 
-              format "fake_chr(<chrom>)".
-    Raises:
+        data with the following modifications:\n
+            - The 'start' and 'end' columns are adjusted relative to the given start position.\n
+            - The 'chrom' column is updated to a fake chromosome name in the format "fake_chr(<chrom>)".
+    
+    Raises
+    ----------
         AttributeError: If any of the `chrom`, `start`, or `end` arguments are 
         not provided.
     """
@@ -139,20 +180,25 @@ def ref_seq_and_relative_bed(bed: str, tsv: str, fasta: str, mut_path: str, regi
     and generates a relative BED or TSV file with mutations mapped to the extracted region. 
     The output files are stored in a specified directory.
     
-    Args:
+    Parameters
+    ----------
         bed (str): Path to the input BED file containing mutation data. If None, a TSV file is used instead.
         tsv (str): Path to the input TSV file containing mutation data. Used if `bed` is None.
         fasta (str): Path to the input FASTA file containing the reference genome.
         mut_path (str): Path to the directory where the output files will be saved.
         region (list): A list containing the chromosome name, start position, and end position 
                         of the genomic region to extract (e.g., ["chr1", 1000, 2000]).
-    Outputs:
-        - A FASTA file containing the extracted genomic region.
-        - A BED or TSV file with mutations mapped to the extracted region, with relative positions.
-        - A log file summarizing the output paths and the offset information.
-    Notes:
-        - The start and end positions in the `region` argument are 1-based.
-        - If the output files already exist, they will be overwritten.
+    
+    Outputs
+    ----------
+    - A FASTA file containing the extracted genomic region.
+    - A BED or TSV file with mutations mapped to the extracted region, with relative positions.
+    - A log file summarizing the output paths and the offset information.
+    
+    Notes
+    ----------
+    - The start and end positions in the `region` argument are 1-based.
+    - If the output files already exist, they will be overwritten.
     """
     name = fasta.split("/")[-2]
     output_path = f"{mut_path}/reference"

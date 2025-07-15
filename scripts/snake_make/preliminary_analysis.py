@@ -14,70 +14,30 @@ from matplotlib.gridspec import GridSpec
 import random as rd
 
 
-def analysis_plot(expe_descrip: str, prediction_log_path: str, analysis_path:str, l_score_types: list, l_comp_types: list, merged_by:str = None, l_resol: list = None):
-    """
-    
-    """
-    if not os.path.exists(analysis_path):
-        os.makedirs(analysis_path)
+"""
+This script generates a slide with plots comparing two matrices based on the provided parameters.
+It reads data from a specified log file, processes it, and creates a PDF with various plots for 
+different resolutions and score types.
 
-    with open(prediction_log_path, "r") as fin:
-        file_data = [line.strip().split("\t") for line in fin if not line.startswith("#")]
-    
-    if len(file_data) == 1 :
-        filepath = {file_data[0][i].split("/")[-1].split(".")[0] : file_data[0][i] 
-                                                                    for i in range(len(file_data[0]))}
-    else : 
-        raise ValueError(f"The data in {prediction_log_path} is not in the right format, "
-                         f"resulting in this reading :\n{file_data}\n...Exiting.")
-    
-    required_keys = {"ref_orcarun", "orcarun"}
-    if any(key not in filepath for key in required_keys):
-        raise ValueError(f"The data in {prediction_log_path} is not in the right format, "
-                         f"resulting in this reading :\n{filepath}\n...Exiting.")
-    
-    mat_comparisons = mat.build_CompareMatrices(filepathref=f"{prediction_log_path}/ref_orcarun.csv", 
-                                                filepathcomp=f"{prediction_log_path}/orcarun.csv")
+Usage:
+    python analysis_slide.py --expe_descrip "Your experiment description" \
+                             --prediction_log_path "path/to/prediction_log.tsv" \ 
+                             --analysis_path "path/to/analysis_directory"  \
+                             --l_score_types "score1,score2,..." \
+                             [--merged_by "pattern_to_merge_runs"] \
+                             [--l_resol "resol1,resol2,..."] \
+                             [--show_rdm True/False] \
+                             [--show_compartments True/False] \
 
-    if l_resol is None or l_resol == ['None'] :
-        l_resol = []
-        if "insulation_count" in l_score_types or "insulation_correl" in l_score_types: 
-            l_resol += ["1Mb", "2Mb", "4Mb"]
-        if "PC1" in l_score_types : 
-            l_resol += ["8Mb", "16Mb", "32Mb"]
+Dependencies:
+    - matplotlib
+    - random
+    - matrices (custom module)
     
-    log_info = ""
-    for resol in l_resol :
-        plots_path = f"{analysis_path}/plots_{resol}.pdf"
-
-        if os.path.exists(plots_path) :
-            os.remove(plots_path)
-
-        with PdfPages(plots_path, keep_empty=False) as pdf:
-            log_info += f"To produce the plots in plots_{resol}.pdf the following method and arguments were used :\n"
-
-            mat_comparisons.dispersion_plot(merged_by=merged_by, l_resol=[resol])
-            pdf.savefig()
-            log_info += f"mat_comparisons.dispersion_plot(merged_by={merged_by}, l_resol=[{resol}])\n"
-
-            for score in l_score_types :
-                mat_comparisons.dispersion_plot(data_type="score", l_resol=[resol], merged_by=merged_by, 
-                                                mut_dist=True, score_type = score)
-                pdf.savefig()
-                log_info += f"mat_comparisons.dispersion_plot(data_type='score', l_resol=[{resol}], merged_by={merged_by}, mut_dist=True, score_type = {score})\n"
-                                   
-            for comp_type in l_comp_types :
-                mat_comparisons.plot_2_matices_comp(_2_run=["ref", "orcarun_Wtd_mut"], resol=resol, comp_type=comp_type, l_score_types=l_score_types, mutation=True)
-                pdf.savefig()
-                log_info += f"mat_comparisons.plot_2_matices_comp(_2_run=['ref', 'orcarun_Wtd_mut'], resol={resol}, comp_type={comp_type}, l_score_types={l_score_types}, mutation=True)\n"
-            
-            
-            pdf.close()
-            log_info += f"\n"
-    
-    log_path = f"{analysis_path}/plots.log"
-    with open(log_path, "w") as fout:
-        fout.write(log_info)
+Notes:
+    - Ensure that the input log file is in the correct format (tab-separated values).
+    - The script will create a directory for the analysis if it does not exist.
+"""
 
 
 
@@ -85,6 +45,34 @@ def analysis_slide(expe_descrip: str, prediction_log_path: str, analysis_path:st
                    l_score_types: list, merged_by:str = None, l_resol: list = None, 
                    show_rdm: bool = False, show_compartments: bool = False):
     """
+    Generate a slide with plots comparing two matrices based on the provided parameters.
+
+    Parameters
+    ----------
+        - expe_descrip (str): Description of the experiment, used in the title of the plots.
+        - prediction_log_path (str): Path to the log file containing the matrix files.
+        - analysis_path (str): Path to the directory where the analysis plots will be saved.
+        - l_score_types (list): List of score types to be included in the plots.
+        - merged_by (str, optional): A pattern to merge runs by. Defaults to None.
+        - l_resol (list, optional): List of resolutions to be used in the analysis. If None, default resolutions will be selected based on score types.
+        - show_rdm (bool, optional): Whether to show random mutations in the plots. Defaults to False.
+        - show_compartments (bool, optional): Whether to show compartments in the plots. Defaults to False.
+    
+    Returns
+    ----------
+        None: The function saves the plots in the specified analysis path and logs the process.
+
+    Side Effects
+    ----------
+    - Creates a directory for the analysis if it does not exist.
+    - Generates PDF files with plots comparing the matrices.
+    - Writes a log file with details of the analysis performed.
+    - Creates a global log file summarizing the analysis.
+    - Handles errors if the input data is not in the expected format.
+    - Raises ValueError if the input data is not in the expected format.
+    - Raises FileNotFoundError if the prediction log file does not exist.
+    - Raises KeyError if required keys are missing in the input data.
+    - Raises Exception if any unexpected error occurs during the analysis.
     """
     if not os.path.exists(analysis_path):
         os.makedirs(analysis_path)
@@ -275,8 +263,6 @@ def parse_arguments():
                         required=True, help='The path to the directory in which the analysis plots will be saved.')
     parser.add_argument("--l_score_types",
                         required=True, help='The list of scores for which plots should specifically be done.')
-    # parser.add_argument("--l_comp_types", 
-    #                     required=True, help="The list of comparison types to display (at this point 'triangular' and 'substract' are supported).") #used for analysis_plot
     parser.add_argument("--merged_by",
                         required=False, help="A pattern in the name of paticular runs, if there are runs which data should " \
                                              "be treated as a single dataset.")

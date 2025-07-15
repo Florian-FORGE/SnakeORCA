@@ -21,6 +21,34 @@ logging.basicConfig(
 )
 
 
+"""
+This script generates analysis plots for a given experiment based on the provided prediction log file.
+It reads the prediction log to extract file paths, builds comparison matrices, and generates heatmaps and regression plots for specified scores at various resolutions.
+
+It supports options to show random predictions and compartments in the plots.
+
+Usage:
+    python analysis_slide.py --expe_descrip "Experiment Description" \
+                             --prediction_log_path "path/to/prediction.log" \
+                             --analysis_path "path/to/analysis" \
+                             --l_score_types "score1,score2,..." \
+                             [--l_resol "res1,res2,..."] \
+                             [--show_rdm True|False] \
+                             [--show_compartments True|False]
+
+Dependencies:
+    - matplotlib
+    - random
+    - matrices (custom module)
+
+Notes:
+    - Ensure that the input log file is in the correct format (tab-separated values).
+    - The script will create a directory for the analysis if it does not exist.                           
+"""
+
+
+
+
 def wrap_text(text: str, width: int, sep: str = " "):
     words = text.split(sep=sep)
     lines = []
@@ -48,6 +76,53 @@ def analysis_slide(expe_descrip: str, prediction_log_path: str, analysis_path:st
                    l_score_types: list, l_resol: list = None, 
                    show_rdm: bool = False, show_compartments: bool = False):
     """
+    Generates analysis plots based on the provided prediction log file.
+
+    Parameters
+    ----------
+    expe_descrip : str
+        Description of the experiment, used in the plot titles.
+    prediction_log_path : str
+        Path to the prediction log file containing the file paths for the reference and tested runs.
+    analysis_path : str
+        Path to the directory where the analysis plots will be saved.
+    l_score_types : list
+        List of score types for which plots should be generated.
+    l_resol : list, optional
+        List of resolutions to study. If not specified, default resolutions will be selected based on the score types.
+    show_rdm : bool, optional
+        Whether to show heatmaps for one random prediction from the randomly mutated experiments. Default is False.
+    show_compartments : bool, optional
+        Whether to show compartments in the plots. Default is False.
+    
+    Raises
+    ------
+    ValueError
+        If the prediction log file is not in the expected format or if required keys are missing.
+    FileNotFoundError
+        If the prediction log file does not exist or if the analysis path cannot be created.
+    
+    Notes
+    -----
+    - The script will create the analysis directory if it does not exist.
+    - The generated plots will be saved as PDF files in the specified analysis path.
+    - A log file will be created in the analysis path summarizing the methods and arguments used for generating the plots.
+    - The script will also create a global log file summarizing the successful execution of the function.
+    - The function will raise an error if the prediction log file is not in the expected format or if required keys are missing.
+    - The function will log the steps taken during the analysis process.
+    - The function will handle the resolution of mutated positions and adjust the plot titles accordingly.
+    - The function will generate heatmaps and regression plots for the specified score types at various resolutions.
+    - The function will handle the case where the number of mutated positions exceeds 1 million,
+      formatting the number appropriately for display in the plot titles.
+    - The function will generate saddle plots for the specified resolutions if applicable.
+    - The function will log the information about the generated plots and the methods used to create them.
+    - The function will ensure that the generated plots are saved in a structured manner, with separate
+      directories for each resolution and a log file summarizing the analysis.
+    - The function will handle the case where the prediction log file contains only one line, ensuring
+      that the file paths are correctly extracted and used for the analysis.
+    - The function will raise an error if the prediction log file is not in the expected format or if required keys are missing.
+    - The function will ensure that the generated plots are visually appealing and informative, with appropriate titles
+      and labels for the axes.    
     """
     if not os.path.exists(analysis_path):
         os.makedirs(analysis_path)
@@ -254,8 +329,6 @@ def parse_arguments():
                         required=True, help='The path to the directory in which the analysis plots will be saved.')
     parser.add_argument("--l_score_types",
                         required=True, help='The list of scores for which plots should specifically be done.')
-    # parser.add_argument("--l_comp_types", 
-    #                     required=True, help="The list of comparison types to display (at this point 'triangular' and 'substract' are supported).") #used for analysis_plot
     parser.add_argument("--l_resol",
                         required=False, help="The list of resolutions to study. If not specified, the more " \
                                                         "representative resolutions for the given score types will " \
@@ -274,7 +347,6 @@ if __name__ == '__main__':
     args = parse_arguments()
 
     l_score_types = args.l_score_types.split(",")
-    # l_comp_types = args.l_comp_types.split(",") #used for analysis_plot
     l_resol = args.l_resol.split(",") if args.l_resol is not None else None
     show_rdm = bool(args.show_rdm.lower() == "true") if args.show_rdm is not None else False
     show_compartments = bool(args.show_compartments.lower() == "true") if args.show_compartments is not None else False

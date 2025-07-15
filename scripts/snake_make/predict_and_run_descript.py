@@ -12,6 +12,39 @@ import matrices as mat
 import pandas as pd
 
 
+"""
+This script generates predictions and OrcaRun descriptions for a set of mutations.
+It processes a sequence to generate predictions for a set of mutations (wild-type and random mutations)
+and creates associated OrcaRun descriptions. It also generates a reference OrcaRun description for the wild-type sequence.
+
+Usage:
+    python predict_and_run_descript.py --pred_prefix "prefix" \
+                                       [--resol_model "model"] \
+                                       --mutate_log_path "path/to/mutate.log" \
+                                       --mpos "mpos" \
+                                       --pred_path "path/to/predictions" \
+                                       --abs_to_rel_log_path "path/to/abs_to_rel.log" \
+                                       --builder_path "path/to/builder" \
+                                       [--cool_resol "cool_resolution"] \
+                                       [--strict "True/False"] \
+                                       [--padding_chr "padding_character"] \
+                                       [--no_cuda "True/False"] \
+                                       [--use_memmapgenome "True/False"]
+
+Dependencies:
+    - pandas
+    - process_sequence (custom module)
+    - matrices (custom module)
+
+Notes:
+    - The script expects the input BED or TSV file to have specific columns: 'chrom',
+      'start', 'end', 'name', and optionally 'score' and 'strand'.
+    - The script will create a directory for the OrcaRun descriptions if it does not exist.
+    - The script will generate a prediction file for each mutation and a reference file for the wild-type sequence.
+    - The output files will be saved in the specified prediction path and builder path.
+    - The script will also create a global log file that contains the paths to the OrcaRun description files.
+"""
+
 
 
 def predict_and_orcarun_descript(prediction_prefix: str, 
@@ -32,7 +65,8 @@ def predict_and_orcarun_descript(prediction_prefix: str,
     (wild-type and random mutations) and creates associated OrcaRun descriptions. It 
     also generates a reference OrcaRun description for the wild-type sequence.
 
-    Args:
+    Parameters
+    ----------
         chrom (str): Chromosome identifier.
         prediction_prefix (str): Prefix for the prediction output files.
         resol_model (str): Resolution model to be used for predictions.
@@ -46,12 +80,14 @@ def predict_and_orcarun_descript(prediction_prefix: str,
         pred_path (str): Path to store prediction outputs.
         ref_fasta (str): Path to the reference FASTA file.
         builder_path (str): Path to store the generated OrcaRun description files.
-    Raises:
+    Raises
+    ----------
         Exception: If there is an error creating the builder directory.
-    Outputs:
-        - Generates prediction files for each mutation and the reference sequence.
-        - Creates OrcaRun description files (`orcarun.csv` and `ref_orcarun.csv`) 
-          containing metadata for the predictions.
+    Outputs
+    ----------
+    - Generates prediction files for each mutation and the reference sequence.
+    - Creates OrcaRun description files (`orcarun.csv` and `ref_orcarun.csv`) 
+      containing metadata for the predictions.
     """
     data = []
     
@@ -160,8 +196,6 @@ def parse_arguments():
                                      Mutate a genome fasta sequence according to the mutations specified in a bed file
                                      '''))
     
-    # parser.add_argument('--chrom',
-    #                     required=True, help='The chromosome name that should be looked for in the fasta file.')
     parser.add_argument("--pred_prefix",
                         required=True, help="The the prediction prefix that is used to differentiate these runs from others.")
     parser.add_argument("--resol_model", 

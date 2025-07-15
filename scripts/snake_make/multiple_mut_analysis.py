@@ -16,6 +16,28 @@ import numpy as np
 from seaborn import boxenplot
 import re
 
+
+"""
+This script generates a boxplot slide for multiple mutation analyses.
+It reads data from a specified file, processes it, and creates a PDF with boxplots for each score type.
+The plots are organized in a grid layout, with each row representing a different score type.
+The script also includes functionality to handle long names and wrap text for better readability.
+
+Usage:
+    python multiple_mut_analysis.py --descrip "Your description here" --data_file "path/to/data_file.tsv" --analysis_path "path/to/analysis_directory" --score_types "score1,score2,..."
+
+Dependencies:
+    - pandas
+    - matplotlib
+    - seaborn
+
+Note:
+    - Ensure that the input data file is in the correct format (tab-separated values).
+    - The script will create a directory for the analysis if it does not exist.
+"""
+
+
+
 def natural_key(s):
     # Split the string into a list of strings and integers
     return [int(text) if text.isdigit() else text.lower() for text in re.split(r'(\d+)', s)]

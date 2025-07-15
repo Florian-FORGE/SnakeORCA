@@ -16,8 +16,30 @@ from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 
 """
-######### Description needs to be done
+This script generates a random DNA genome sequence of a specified length and creates a trace file with annotations for mutations.
+It also generates a FASTA file containing the random genome sequence and a CSV file with mutation annotations.
+The genome is generated with variations in nucleotide probabilities, and palindromic sequences may be included
+based on the length of the generated sequence.
+It is designed to be used in a bioinformatics context, particularly for simulating genomic data for testing or analysis purposes.
+It requires the Biopython library for sequence handling and pandas for data manipulation.
 
+Usage:
+    python abs_rdm_genome.py --trace <trace_file> --length <genome_length> --mut_path <output_directory> --chrom_name <chromosome_name>
+
+Arguments:
+    --trace: Path to the trace file containing mutation annotations in TSV format.
+    --length: Length of the random genome to generate (should be greater than 1000).
+    --mut_path: Path to the output directory where the generated files will be saved.
+    --chrom_name: Name of the chromosome to be used in the trace file (e.g., 'fake_chr').
+
+Dependencies:
+    - Biopython: For sequence handling and FASTA file generation.
+    - pandas: For reading and writing mutation annotations in CSV format.
+
+Note:
+    - The script generates a random genome sequence with nucleotide probabilities that vary based on the length of the sequence.
+    - It creates a trace file with mutation annotations and a FASTA file with the generated genome sequence.
+    - The script logs the chosen bases and palindromic sequences for transparency and debugging purposes.
 """
 
 def rdm_genome(length: int):
@@ -160,6 +182,44 @@ def read_annotations_from_trace(trace: str, chrom_name: str):
 
 def main(trace: str, length: int, mut_path: str, chrom_name: str):
     """
+    Main function to generate a random genome and create a trace file with annotations for mutations.
+
+    Parameters
+    ----------
+    trace : str
+        Path to the trace file containing mutation annotations in TSV format.
+    length : int
+        Length of the random genome to generate (should be greater than 1000).
+    mut_path : str
+        Path to the output directory where the generated files will be saved.
+    chrom_name : str
+        Name of the chromosome to be used in the trace file (e.g., 'fake_chr').
+    
+    Outputs
+    ----------
+    - A FASTA file containing the random genome sequence.
+    - A CSV file with mutation annotations.
+    - A log file summarizing the output paths and the offset information.
+    - A global log file with the relative paths of the generated files.
+    - A line in the global log file indicating the relative path to the mutation annotations.
+    - A line in the global log file indicating the relative path to the random genome sequence.
+    
+    Notes
+    ----------
+    - The function generates a random genome sequence with nucleotide probabilities that vary based on the length of the sequence.
+    - It creates a trace file with mutation annotations and a FASTA file with the generated genome sequence.
+    - The script logs the chosen bases and palindromic sequences for transparency and debugging purposes.
+    - The output files are stored in a directory structure under `mut_path/reference`.
+    - The function ensures that the output directory exists and removes any existing files with the same names
+      before writing new files to avoid conflicts.
+    - A directory structure is created under `mut_path/reference` to store the output files.
+    - The output files are named as follows:
+        - `sequence.fa`: Contains the randomly generated genome sequence.
+        - `relative_position_mutations.csv`: Contains the mutation annotations with relative positions.
+        - `resume.log`: Contains a summary of the generated files and their paths.
+        - `abs_rdm.log`: Contains the relative paths of the generated files and mutation annotations.
+    - The function ensures that the output directory exists and removes any existing files with the same names
+      before writing new files to avoid conflicts.
     """
     output_path = f"{mut_path}/reference"
     if not os.path.exists(output_path):

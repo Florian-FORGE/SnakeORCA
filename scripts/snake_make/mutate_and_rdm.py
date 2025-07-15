@@ -12,6 +12,40 @@ from pysam import FastaFile
 from Bio import SeqIO
 
 
+"""
+This script reads a BED file or a TSV file containing mutation information, applies the mutations
+to a reference sequence in FASTA format, and generates mutated sequences. It also allows for the generation
+of random mutations at specified positions in the genome. The mutated sequences and their corresponding traces
+are saved to a specified output directory.
+
+Usage:
+    python mutate_and_rdm.py --abs_to_rel_log_path <path_to_log_file> \
+                             --mut_path <output_directory> \
+                             [--muttype <mutation_type>] \
+                             [--sequence <sequence>] \
+                             [--nb_random <number_of_random_mutations>] \
+                             [--rdm_seq <True|False>] \
+                             [--excluded_domains <path_to_excluded_domains_file>] \
+                             [--included_into <path_to_included_domains_file>] \
+                             [--distrib <distribution_type>] \
+                             [--binsize <binsize>] \
+                             [--region <chromosome:start-end>] \
+                             [--order <order_of_bins>]
+
+Dependencies:
+    - pysam
+    - BioPython
+    - mutation (custom module for handling mutations)
+    - mutate_with_rdm (custom module for generating random mutations)
+
+Notes:
+    - The script expects a log file containing paths to the reference sequence and mutation files.
+    - The output directory will contain subdirectories for each mutation type, with the mutated sequences
+      and traces saved in FASTA and CSV formats, respectively.
+"""
+
+
+
 def mutate_and_rdm_mutations(abs_to_rel_log_path: str, mut_path: str, muttype: str = "shuffle", 
                              sequence:str = ".", nb_random: int = 0, rdm_pos: bool = True, 
                              excluded_domains: str = None, included_into: str = None, 
@@ -24,22 +58,36 @@ def mutate_and_rdm_mutations(abs_to_rel_log_path: str, mut_path: str, muttype: s
     and applies them to the sequence. The mutated sequences and their corresponding traces
     are saved to the specified output path.
     
-    Args:
-        bed (str): Path to the BED file containing mutation information. If None, mutations
-                   are read from the TSV file.
-        tsv (str): Path to the TSV file containing mutation information. Used if `bed` is None.
-        ref_sequence (str): Path to the reference sequence in FASTA format.
-        mut_path (str): Directory path where the mutated sequences and traces will be saved.
-        mutationtype (str): Type of mutation to apply (e.g., SNP, insertion, deletion).
-        region (list): A list containing region information in the format [chromosome, start, end].
-        nb_random (int, optional): Number of random mutations to generate. Defaults to 0.
-    Raises:
+    Parameters
+    ----------
+        - bed (str): 
+            Path to the BED file containing mutation information. If None, mutations
+            are read from the TSV file.
+        - tsv (str):
+            Path to the TSV file containing mutation information. Used if `bed` is None.
+        - ref_sequence (str):
+            Path to the reference sequence in FASTA format.
+        - mut_path (str):
+            Directory path where the mutated sequences and traces will be saved.
+        - mutationtype (str):
+            Type of mutation to apply (e.g., SNP, insertion, deletion).
+        - region (list):
+            A list containing region information in the format [chromosome, start, end].
+        - nb_random (int, optional):
+            Number of random mutations to generate. Defaults to 0.
+    
+    Raises
+    ----------
         FileNotFoundError: If the reference sequence file does not exist.
         ValueError: If the region format is invalid or if mutation data is missing.
-    Outputs:
+    
+    Outputs
+    ----------
         - Mutated sequences are saved in FASTA format under `mut_path/{mutation_name}/sequence.fa`.
         - Mutation traces are saved as CSV files under `mut_path/{mutation_name}/trace_{mutation_name}.csv`.
-    Notes:
+    
+    Notes
+    ----------
         - The function ensures that random mutations do not overlap with existing mutations.
         - The random seed for generating mutations is incremented for each random mutation set.
     """
