@@ -1,12 +1,9 @@
 import argparse
 import textwrap
 import os
-import threading
-import logging
 import sys
-sys.path.append(f"/work/user/fforge/work/scripts/orcanalyse")
-
-import matrices as mat
+c_path = "/home/fforge/Stage-IA3D/scripts/"
+sys.path.append(f"{c_path}/orcanalyse")
 
 import math
 import pandas as pd
@@ -14,18 +11,42 @@ from matplotlib.backends.backend_pdf import PdfPages
 
 import matplotlib.pyplot as plt
 from matplotlib.gridspec import GridSpec
+import numpy as np
 
 from seaborn import boxenplot
 import re
 
+import matrices as mat
 
 
-# Helper to get input with a timeout
-def prompt_with_timeout(prompt, timeout, result_container):
-    try:
-        result_container.append(input(prompt))
-    except Exception as e:
-        logging.error(f"Error during input: {e}")
+"""
+This script generates a boxplot slide for multiple mutation analyses.
+It reads data from a specified file, processes it, and creates a PDF with boxplots for each score type.
+The plots are organized in a grid layout, with each row representing a different score type.
+The script also includes functionality to handle long names and wrap text for better readability.
+
+Usage:
+    python multiple_mut_analysis.py --descrip "Your description here" \
+                                    --data_file "path/to/data_file.tsv" \
+                                    --analysis_path "path/to/analysis_directory" \
+                                    --output_file "name_of the_file.pdf" \
+                                    --score_types "insulation_count,PC1" \
+                                    [--rename] \
+                                    [--create_data] \
+                                    [--resol "studied resolution"] \
+                                    [--wdir "path/to/working/directory"] \
+                                    [--expe_names "expe1:name1,expe2:name2,..."]
+
+Dependencies:
+    - pandas
+    - matplotlib
+    - seaborn
+    - matrices (custom module)
+
+Note:
+    - Ensure that the input data file is in the correct format (tab-separated values).
+    - The script will create a directory for the analysis if it does not exist.
+"""
 
 
 
@@ -195,23 +216,6 @@ def boxplot_slide(descrip: str, data_file: str, analysis_path:str, output_file: 
     """
     wdir = f"{os.path.abspath(os.curdir)}/{wdir}" if wdir is not None else "."
     if create_data :
-        if os.path.exists(data_file):
-            logging.warning("The data file already exists...Waiting for confirmation.")
-
-            result = []
-            thread = threading.Thread(target=prompt_with_timeout, args=("Do you wish to overwrite the already existing file? (yes/no): ", 300, result))
-            thread.start()
-            thread.join(timeout=300)  # 5 minutes timeout
-
-            if thread.is_alive():
-                logging.error("User took too long to respond.")
-                raise TimeoutError("Validation timed out after 5 minutes.")
-
-            overwrite = result[0].strip().lower()
-
-            if overwrite not in ['yes', 'y']:
-                raise FileExistsError("The data file already exists and overwrite was not confirmed.")
-        
         resol = resol if resol else "32Mb"
         extract_scores_data(resol=resol, create=create_data, data_file=data_file, rename=rename, 
                             wdir=wdir, expe_name_dict=expe_name_dict)
