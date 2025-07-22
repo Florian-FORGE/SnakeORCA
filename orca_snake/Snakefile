@@ -6,8 +6,11 @@ experiment_file = config["experiments"]
 output_repo = config["output_repo"]
 experiments = pd.read_csv(experiment_file, sep='\t', dtype={"expe": str}).set_index("expe", drop=False)
 l_expe = experiments.index.tolist()
+l_names = experiments["names"]
 workingdir = f"{workflow.basedir}/{config['workdir']}"
 workdir: workingdir
+
+comp_expe_names = ",".join([f"{row['expe']}:{row['names']}" for _, row in experiments.iterrows()])
 
 # --- Helper functions ---
 def mutable(wildcards=None):
@@ -19,7 +22,7 @@ def mutable(wildcards=None):
                 successful.append(expe)
         except Exception:
             pass
-    return expand("experience/shuf_bins_96_128Mb/{expe}/genome/reference/relative_position_mutations.bed", expe=successful)
+    return expand("experience/shuf_bins_106_138Mb/{expe}/genome/reference/relative_position_mutations.bed", expe=successful)
 
 def valid_expe(wildcards=None):
     # Get the output file from the check_bed checkpoint
@@ -30,26 +33,37 @@ def valid_expe(wildcards=None):
             if line.strip():
                 expe_name = line.split()[1].split('/')[2]
                 valid_experiments.append(expe_name)
-    return expand("experience/shuf_bins_96_128Mb/{expe}/analysis.log", expe=valid_experiments)
+    return expand("experience/shuf_bins_106_138Mb/{expe}/analysis.log", expe=valid_experiments)
+
+def comparable(wildcards=None):
+    # Get the output file from the check_bed checkpoint
+    check_bed_output = checkpoints.check_bed.get().output[0]
+    valid_experiments = []
+    with open(check_bed_output) as f:
+        for line in f:
+            if line.strip():
+                expe_name = line.split()[1].split('/')[2]
+                valid_experiments.append(expe_name)
+    return expand("experience/shuf_bins_106_138Mb/{expe}/prediction.log", expe=valid_experiments)
 
 # --- Rules ---
 
 rule all:
     input:
-        "experience/shuf_bins_96_128Mb/done.log"
+        "experience/shuf_bins_106_138Mb/done.log"
 
 
 rule build:
     input:
-        expand("experience/shuf_bins_96_128Mb/{expe}/abs_to_rel.log", expe=experiments.index),
-        "experience/shuf_bins_96_128Mb/list_valid_bed.txt",
+        expand("experience/shuf_bins_106_138Mb/{expe}/abs_to_rel.log", expe=experiments.index),
+        "experience/shuf_bins_106_138Mb/list_valid_bed.txt",
     output:
-        "experience/shuf_bins_96_128Mb/build.log"
+        "experience/shuf_bins_106_138Mb/build.log"
     params:
         len_expe=len(experiments.index)
     shell:
         """
-        mkdir -p experience/shuf_bins_96_128Mb
+        mkdir -p experience/shuf_bins_106_138Mb
         echo 'Building experience with {params.len_expe} experiments' > {output}
         echo 'Valid experiments: {input}' >> {output}
         """
@@ -59,10 +73,10 @@ checkpoint abs_to_rel:
         genome=config["genome"],
         mutations=lambda wildcards: experiments.loc[wildcards.expe]["mutations"]
     output:
-        "experience/shuf_bins_96_128Mb/{expe}/abs_to_rel.log",
-        "experience/shuf_bins_96_128Mb/{expe}/genome/reference/relative_position_mutations.bed"
+        "experience/shuf_bins_106_138Mb/{expe}/abs_to_rel.log",
+        "experience/shuf_bins_106_138Mb/{expe}/genome/reference/relative_position_mutations.bed"
     params:
-        outdir="experience/shuf_bins_96_128Mb/{expe}/genome",
+        outdir="experience/shuf_bins_106_138Mb/{expe}/genome",
         region=config["region"]
     shell:
         """
@@ -75,10 +89,10 @@ checkpoint abs_to_rel:
 
 checkpoint check_bed:
     input:
-        expand("experience/shuf_bins_96_128Mb/{expe}/abs_to_rel.log", expe=experiments.index)
+        expand("experience/shuf_bins_106_138Mb/{expe}/abs_to_rel.log", expe=experiments.index)
     
     output:
-        "experience/shuf_bins_96_128Mb/list_valid_bed.txt"
+        "experience/shuf_bins_106_138Mb/list_valid_bed.txt"
     
     params:
         input=lambda wildcards: " ".join(mutable()),
@@ -91,11 +105,12 @@ checkpoint check_bed:
 
 rule valid:
     input:
-        "experience/shuf_bins_96_128Mb/build.log",
-        valid_expe
+        "experience/shuf_bins_106_138Mb/build.log",
+        valid_expe,
+        "experience/result_analysis/Comparison_scores_32Mb_shuf_bins_106_138Mb.pdf"
     
     output:
-        "experience/shuf_bins_96_128Mb/valid_expe.log"
+        "experience/shuf_bins_106_138Mb/valid_expe.log"
     
     params:
         len_expe=len(experiments.index),
@@ -104,7 +119,7 @@ rule valid:
     
     shell:
         """
-        mkdir -p experience/shuf_bins_96_128Mb
+        mkdir -p experience/shuf_bins_106_138Mb
         echo 'Mutable experiments: {params.valid}' > {output}
         echo 'Hence {params.len_valid}/{params.len_expe} were mutable' >> {output}
         """
@@ -112,22 +127,22 @@ rule valid:
 
 rule lunch_analysis:
     input:
-        "experience/shuf_bins_96_128Mb/valid_expe.log"
+        "experience/shuf_bins_106_138Mb/valid_expe.log"
     output:
-        "experience/shuf_bins_96_128Mb/done.log"
+        "experience/shuf_bins_106_138Mb/done.log"
     shell:
         """
-        mkdir -p experience/shuf_bins_96_128Mb
+        mkdir -p experience/shuf_bins_106_138Mb
         touch {output}
         """
 
 rule mutate:
     input:
-        rel_log="experience/shuf_bins_96_128Mb/{expe}/abs_to_rel.log"
+        rel_log="experience/shuf_bins_106_138Mb/{expe}/abs_to_rel.log"
     output:
-        "experience/shuf_bins_96_128Mb/{expe}/mutate.log"
+        "experience/shuf_bins_106_138Mb/{expe}/mutate.log"
     params:
-        outdir="experience/shuf_bins_96_128Mb/{expe}/genome",
+        outdir="experience/shuf_bins_106_138Mb/{expe}/genome",
         nb_random=config["nb_random"],
         distrib=config["distrib"],
         muttype=config["muttype"]
@@ -143,22 +158,22 @@ rule mutate:
 
 rule predict:
     input:
-        mut_log="experience/shuf_bins_96_128Mb/{expe}/mutate.log", 
-        rel_log="experience/shuf_bins_96_128Mb/{expe}/abs_to_rel.log"
+        mut_log="experience/shuf_bins_106_138Mb/{expe}/mutate.log", 
+        rel_log="experience/shuf_bins_106_138Mb/{expe}/abs_to_rel.log"
     output:
-        "experience/shuf_bins_96_128Mb/{expe}/prediction.log"
+        "experience/shuf_bins_106_138Mb/{expe}/prediction.log"
     params:
         pred_prefix="{expe}",
         resol_model=config["resol_model"],
         mpos=config["mpos"],
-        pred_path="experience/shuf_bins_96_128Mb/{expe}/predictions",
-        builder_path="experience/shuf_bins_96_128Mb/{expe}/matrices_builder", 
+        pred_path="experience/shuf_bins_106_138Mb/{expe}/predictions",
+        builder_path="experience/shuf_bins_106_138Mb/{expe}/matrices_builder", 
         no_cuda=config["no_cuda"],
         gpu_mem = config["gpu_mem"]
     resources:
         predict_slots=1
     benchmark:
-        "benchmarks/shuf_bins_96_128Mb/predict/{expe}.tsv"
+        "benchmarks/shuf_bins_106_138Mb/predict/{expe}.tsv"
     shell:
         """
         python ../scripts/snake_make/predict_and_run_descript.py \
@@ -174,11 +189,11 @@ rule predict:
 
 rule analysis:
     input:
-        predict_log="experience/shuf_bins_96_128Mb/{expe}/prediction.log"        
+        predict_log="experience/shuf_bins_106_138Mb/{expe}/prediction.log"        
     output:
-        "experience/shuf_bins_96_128Mb/{expe}/analysis.log"
+        "experience/shuf_bins_106_138Mb/{expe}/analysis.log"
     params:
-        analysis_path="experience/shuf_bins_96_128Mb/{expe}/analysis",
+        analysis_path="experience/shuf_bins_106_138Mb/{expe}/analysis",
         score_types=config["score_types"],
         merged_by=config["merged_by"],
         resol=config["resol"],
@@ -195,3 +210,36 @@ rule analysis:
                --l_resol {params.resol} \
                --show_rdm {params.show_rdm}
         """
+
+
+rule compare:
+    input:
+        comparable
+    output:
+        "experience/result_analysis/Comparison_scores_32Mb_shuf_bins_106_138Mb.pdf"
+    params:
+        descrip=f'"Comparison between wanted and random mutations for the deviation of the scores"',
+        data_file="experience/scores_data_shuf_bins_106_138Mb.csv",
+        analysis_path="experience/result_analysis",
+        output_file="Comparison_scores_32Mb_shuf_bins_106_138Mb.pdf",
+        score_types="insulation_count,PC1",
+        resol=config["resol_comp"],
+        wdir="experience/shuf_bins_106_138Mb",
+        expe_names=f'"{comp_expe_names}"',
+        create_data_flag="--create_data" if bool(config["create_data_file"] == True) else "",
+        rename_flag="--rename" if bool(config["rename"] == True) else ""
+    shell:
+        """
+        python ../scripts/snake_make/multiple_mut_analysis.py \
+               --descrip {params.descrip} \
+               --data_file {params.data_file} \
+               --analysis_path {params.analysis_path} \
+               --output_file {params.output_file} \
+               --score_types {params.score_types} \
+               {params.create_data_flag} \
+               {params.rename_flag} \
+               --resol {params.resol} \
+               --wdir {params.wdir} \
+               --expe_names {params.expe_names}
+        """
+

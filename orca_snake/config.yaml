@@ -1,11 +1,11 @@
 workdir: work
-output_repo: experience/shuf_bins_32_64Mb
+output_repo: experience/shuf_bins_106_138Mb
 genome: /work/user/fforge/work/resources/genome/Homo_sapiens.GRCh38.dna.primary_assembly/sequence.fa
 experiments: /work/user/fforge/work/orca_snake/lil_tiny_new_rdm.tsv
-region: chr9:96000001-128000000
+region: chr9:106394717-138394717
 muttype: shuffle
 nb_random: 10
-distrib: "shuffle_bins"
+distrib: shuffle_bins
 resol_model: 32Mb
 mpos: 15_872_000
 no_cuda: False
@@ -14,3 +14,6 @@ score_types: insulation_count,PC1
 merged_by: rdm
 resol: None
 show_rdm: False
+resol_comp: 32Mb
+rename: True
+create_data_file: True
