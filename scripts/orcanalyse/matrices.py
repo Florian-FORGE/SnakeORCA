@@ -242,7 +242,7 @@ def replace_nan_with_neighbors_mean(arr: Union[list, np.ndarray]):
                         if j < n-1 :
                             neighbors.append(arr[i, j+1])
 
-                    arr[i] = np.nanmean(neighbors) if neighbors is not None else np.nanmean(arr)
+                    arr[i] = np.nanmean(neighbors) if (neighbors is not None and len(neighbors) != 0) else np.nanmean(arr)
     
     elif isinstance(arr, (list, np.ndarray)) and np.array(arr).ndim == 1:  # Check if arr is 1D 
         arr = np.array(arr)
@@ -260,7 +260,7 @@ def replace_nan_with_neighbors_mean(arr: Union[list, np.ndarray]):
                     if i < len(arr) - 1 :
                         neighbors = [arr[i + 1]]
                 
-                arr[i] = np.nanmean(neighbors) if neighbors is not None else 0
+                arr[i] = np.nanmean(neighbors) if neighbors is not None else np.nanmean(arr)
     
     else :
         raise TypeError("The array should be either 1D or 2D. Not supported...Exiting.")
@@ -1322,8 +1322,8 @@ class Matrix():
     
         
     def saddle_plot(self,
-                    gs: GridSpec,
-                    f: figure.Figure, 
+                    gs: GridSpec = None,
+                    f: figure.Figure = None, 
                     title: str = None,
                     i: int = 0, 
                     j: int = 0, 
@@ -1365,6 +1365,9 @@ class Matrix():
          Produces the saddle plot associated with the Matrix object with 
          the specified overlays.
          """
+        gs = GridSpec(nrows=1, ncols=1) if gs is None else gs
+        f = plt.figure(clear=True, figsize=(20, 20)) if f is None else f
+        
         m, sorted_indices = self.saddle_mat
         
         # vmin, vmax = self.get_extremum_heatmap()
@@ -1420,6 +1423,7 @@ class Matrix():
     def _score_plot(self,
                     gs: GridSpec = None,
                     f: figure.Figure = None, 
+                    ax : axes.Axes = None, 
                     title: str =None,
                     score_type: str = "insulation_count", 
                     i: int = 0, 
@@ -1446,7 +1450,7 @@ class Matrix():
         
         f_p_val, _, _ = self.formatting()
         
-        ax = f.add_subplot(gs[i, j])
+        ax = f.add_subplot(gs[i, j]) if ax is None else ax
 
         score = get_property(self, score_type)
         ticks = [i for i in range(0, len(score)+1, len(score)//(len(f_p_val)-1))]
@@ -1802,6 +1806,20 @@ class MatrixView():
                                  "...Exiting.")
             self._refgenome = getattr(first_mat, "refgenome")
         return self._refgenome
+
+    @property
+    def list_mutations(self):
+        if self.l_mut is None :
+            list_mut = None
+            for resol in self.di.keys():
+                if list_mut is None :
+                    list_mut = self.di[resol].l_mut
+                else :
+                    if list_mut != self.di[resol].l_mut :
+                        raise ValueError("The list of mutations should be the same for all " \
+                                         "resolutions...Exiting.")
+            self.l_mut = list_mut
+        return self.l_mut
 
 
     def _save_scores_(self, 
@@ -2729,7 +2747,7 @@ class CompareMatrices():
                     if nb_mut != obj.di[resol].nb_mutated_pb :
                         logging.warning(f"The {name} object does not have the same number of mutated pb "
                                         f"as the reference ({f_name}) --resp. {obj.di[resol].nb_mutated_pb} "
-                                        f"and {nb_mut}) for the resolution {resol}.")
+                                        f"and {nb_mut}-- for the resolution {resol}.")
                         same_nb = False
                         continue
             
@@ -3501,7 +3519,7 @@ class CompareMatrices():
             resolution, data type, values, reference values, score type (if applicable), and
             mutation distance (if applicable).
         """
-        wtd_count = sum(any("wtd" in part.lower() for part in names.split("_"))
+        wtd_count = sum(any(wanted_pattern.lower() in part.lower() for part in names.split("_"))
                             for names in self.comp_dict.keys())
         if wtd_count != 1 :
             print(f" There are {wtd_count} runs with the wanted pattern")
@@ -3539,8 +3557,8 @@ class CompareMatrices():
         for name in comp.keys():
             if isinstance(ref, dict):
                 for resol in ref.keys():
-                    if name == "ref":
-                        for val, ref_val, mut_dist in zip(comp[name][resol], ref[resol]) :
+                    if name == ref_name:
+                        for val, ref_val in zip(comp[name][resol], ref[resol]) :
                             line = [name, resol, data_type, val, ref_val, score_type]
                             data.append(line)
                     else :
