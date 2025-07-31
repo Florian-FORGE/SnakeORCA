@@ -1,0 +1,195 @@
+import pandas as pd
+import os
+import itertools
+
+# --- Load config and experiment table ---
+experiment_file = config["experiments"]
+output_repo = config["output_repo"]
+# print(output_repo)
+experiments = pd.read_csv(experiment_file, sep='\t', dtype={"expe": str}).set_index("expe", drop=False)
+expandable_abs_to_rel = f"{output_repo}" + "/{expe}/abs_to_rel.log"
+l_expe = experiments.index.tolist()
+l_names = experiments["names"]
+
+l_pseudo = sorted(experiments["pseudonym"])
+combs = []
+for i in range(1, len(l_pseudo)+1):
+    for x in itertools.combinations(l_pseudo, i):
+        comb = f'{"_".join(x)}'
+        combs.append(comb)
+
+workingdir = f"{workflow.basedir}/{config['workdir']}"
+workdir: workingdir
+
+traces = {row['pseudonym']: row['trace'] for _, row in experiments.iterrows()}
+comp_expe_names = ",".join([f"{row['pseudonym']}:{row['names']}" for _, row in experiments.iterrows()])
+
+# --- Helper functions ---
+def trace(wildcards):
+    expe = wildcards.expe
+    parts = expe.split("_")
+    if len(parts) == 1 :
+        return traces[expe]
+    else :
+        trace = ",".join([traces[pseudo] for pseudo in parts])
+        return f'"{trace}"'
+
+def mutate_log(wildcards=None):
+    create = True
+    log_path = f"{output_repo}/mutate.log"
+    for expe in combs:
+        ckpt_output = checkpoints.mutate.get(expe=expe).output[0]
+        if create:
+            mode = 'w' if os.path.exists(log_path) else 'x'
+            with open(log_path, mode) as f:
+                f.write(f"{output_repo}/genome/{expe}/sequence.fa\t" + ckpt_output + "\n")
+            create = False
+        else:
+            with open(log_path, 'a') as f:
+                f.write(f"{output_repo}/genome/{expe}/sequence.fa\t" + ckpt_output + "\n")
+    return log_path
+
+
+# --- Rules ---
+
+rule all:
+    input:
+        # f"{output_repo}" + "/done.log"
+        expand(f"{output_repo}/analysis" + "/{expe}/analysis.log", expe=combs),
+        f"{output_repo}/analysis" + "/reference/analysis.log",
+        f"{output_repo}/comparison.log"
+
+
+rule abs_rdm:
+    output:
+        f"{output_repo}/abs_rdm.log"
+    params:
+        length=config["length"],
+        mut_path=f"{output_repo}/genome"
+    shell:
+        """
+        python ../scripts/snake_make/abs_rdm_genome.py \
+               --length {params.length} \
+               --mut_path {params.mut_path}
+        """
+
+rule annot_f_traces:
+    output:
+        f"{output_repo}/genome" + "/{expe}/annot_f_traces.log"
+    params:
+        trace=lambda wildcards: trace(wildcards),
+        mut_path=f"{output_repo}/genome" + "/{expe}",
+        chrom_name=config["chrom_name"]
+    shell:
+        """
+        python ../scripts/snake_make/annot_from_traces.py \
+               --trace {params.trace} \
+               --mut_path {params.mut_path} \
+               --chrom_name {params.chrom_name}
+        """
+
+
+checkpoint mutate:
+    input:
+        f"{output_repo}" + "/abs_rdm.log",
+        f"{output_repo}/genome" + "/{expe}/annot_f_traces.log"
+    output:
+        f"{output_repo}/genome" + "/{expe}/trace_{expe}.csv"
+    params:
+        mut_path=f"{output_repo}/genome" + "/{expe}",
+        rm=f"{output_repo}/genome" + "/{expe}/relative_position_mutations.csv"
+    shell:
+        """
+        python ../scripts/snake_make/bottom_up_mutate.py \
+               --abs_rdm_log_path {input[0]} \
+               --annot_f_traces_log_path  {input[1]} \
+               --mut_path {params.mut_path}
+
+        rm {params.rm}
+        """
+
+rule predict:
+    input:
+        mut_log=mutate_log, 
+        rdm_log=f"{output_repo}/abs_rdm.log",
+        logs=expand(f"{output_repo}/genome" + "/{expe}/trace_{expe}.csv", expe=combs),
+    output:
+        f"{output_repo}/prediction.log",
+        expand(f"{output_repo}/predictions" + "/{expe}/pred_log.csv", expe=combs),
+        f"{output_repo}/predictions" + "/reference/pred_log.csv"
+    params:
+        resol_model=config["resol_model"],
+        mpos=config["mpos"],
+        pred_path=f"{output_repo}/predictions",
+        builder_path=f"{output_repo}/matrices_builder",
+        no_cuda=config["no_cuda"],
+        gpu_mem = config["gpu_mem"]
+    resources:
+        predict_slots=1
+    benchmark:
+        f'benchmarks/Bottom_up/{output_repo.split("/")[-1]}.tsv'
+    shell:
+        """
+        python ../scripts/snake_make/bottom_up_predict.py \
+               --resol_model {params.resol_model} \
+               --mutate_log_path {input.mut_log} \
+               --mpos {params.mpos} \
+               --pred_path {params.pred_path} \
+               --abs_rdm_log_path {input.rdm_log} \
+               --builder_path {params.builder_path} \
+               --no_cuda {params.no_cuda}
+        """
+
+rule analysis:
+    input:
+        f"{output_repo}/predictions" + "/{expe}/pred_log.csv"
+    output:
+        f"{output_repo}/analysis" + "/{expe}/analysis.log"
+    params:
+        analysis_path=lambda wildcards : f"{output_repo}/analysis/{wildcards.expe}",
+        score_types=config["score_types"],
+        resol=config["resol"],
+        expe_descrip=lambda wildcards : wildcards.expe
+    shell:
+        """
+        python ../scripts/snake_make/bottom_up_preliminary_analysis.py \
+               --expe_descrip '{params.expe_descrip}' \
+               --run_path {input} \
+               --analysis_path {params.analysis_path} \
+               --l_score_types {params.score_types} \
+               --l_resol {params.resol}
+        """
+
+
+rule compare:
+    input:
+        expand(f"{output_repo}/predictions" + "/{expe}/pred_log.csv", expe=combs),
+        f"{output_repo}/predictions" + "/reference/pred_log.csv"
+    output:
+        f"{output_repo}/comparison.log"
+    params:
+        descrip=f'"{config["descrip_comp"]}"',
+        data_file=config["data_file_comp"],
+        analysis_path=config["analysis_path_comp"],
+        output_file=config["output_file_comp"],
+        score_types=config["score_types_comp"],
+        resol=config["resol_comp"],
+        wdir=config["output_repo"],
+        expe_names=f'"{comp_expe_names}"',
+        create_data_flag="--create_data" if bool(config["create_data_file"] == True) else "",
+        rename_flag="--rename" if bool(config["rename"] == True) else ""
+    shell:
+        """
+        python ../scripts/snake_make/bottom_up_expe_compared.py \
+               --descrip {params.descrip} \
+               --data_file {params.data_file} \
+               --analysis_path {params.analysis_path} \
+               --output_file {params.output_file} \
+               --score_types {params.score_types} \
+               {params.create_data_flag} \
+               {params.rename_flag} \
+               --resol {params.resol} \
+               --wdir {params.wdir} \
+               --expe_names {params.expe_names}
+        """
+

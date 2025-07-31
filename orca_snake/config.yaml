@@ -1,7 +1,7 @@
 workdir: work
 output_repo: experience/shuf_bins_106_138Mb
 genome: /work/user/fforge/work/resources/genome/Homo_sapiens.GRCh38.dna.primary_assembly/sequence.fa
-experiments: /work/user/fforge/work/orca_snake/lil_tiny_new_rdm.tsv
+experiments: /work/user/fforge/work/orca_snake/experiences.tsv
 region: chr9:106394717-138394717
 muttype: shuffle
 nb_random: 10

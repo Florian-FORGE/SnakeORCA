@@ -2,7 +2,7 @@ import argparse
 import textwrap
 import os
 import sys
-c_path = "/home/fforge/Stage-IA3D/scripts/"
+c_path = "/home/fforge/Stage-IA3D/snakeorca/scripts/"
 sys.path.append(f"{c_path}/orcanalyse")
 
 import matrices as mat

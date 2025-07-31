@@ -157,7 +157,7 @@ def get_obs_over_exp(mat):
     return OE
 
 
-def _get_insulation_score(m: Union[list, np.ndarray], 
+def _get_insulation_score(m: np.ndarray, 
                           w: int = 5) -> list :
         """
         Function to compute the insulation score for a given matrix m,
@@ -184,6 +184,45 @@ def _get_insulation_score(m: Union[list, np.ndarray],
                 score = (s/nv)*(2*w + 1)
             scores.append(score)
         
+        for i in range(n-2*w):
+            if np.isnan(scores[i]) :
+                scores[i] = np.nanmean(scores[min(0, i-w) : max(i+w, n-1)])
+        
+        decal = [np.mean(scores) for i in range(w)]
+        scores = decal  + scores + decal
+
+        return scores
+
+def _get_insulation_score_alt(m: np.ndarray, 
+                              w: int = 5) -> list :
+        """
+        Function to compute the insulation score for a given matrix m,
+        using a sliding window of size 2*w + 1. The score is computed as the
+        mean of the values in the window, multiplied by the number of
+        values in the window. If there are no finite values in the window,
+        the score is set to NaN. The function returns a list of scores,
+        where the first and last w values are replaced by the mean of the
+        scores in the window. This is done to adjust the scores for plotting.
+        """
+        n = len(m)
+        scores = []
+
+        s = 0
+        nv = 0
+        for i in range(w, (n-w)):
+            cnt_space = [m[u,k] for u,k in {j:j for j in range(i-w, i+w+1)}.items()]
+            for elt in cnt_space:
+                if np.isfinite(elt):
+                    s+=elt
+                    nv+=1
+            if nv == 0 :
+                score = np.nan
+            else :
+                score = (s/nv)*((2*w + 1)**2)
+            scores.append(score)
+            s = 0
+            nv = 0
+                    
         for i in range(n-2*w):
             if np.isnan(scores[i]) :
                 scores[i] = np.nanmean(scores[min(0, i-w) : max(i+w, n-1)])

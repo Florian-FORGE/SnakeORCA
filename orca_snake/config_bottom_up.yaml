@@ -1,0 +1,19 @@
+workdir: work
+output_repo: experience/Bottom_up/Try_with_intermediary_rdm
+experiments: /work/user/fforge/work/orca_snake/expe_bottom_up.tsv
+length: 32000000
+chrom_name: fake_chr9
+resol_model: 32Mb
+mpos: 15_872_000
+no_cuda: False
+gpu_mem: 4
+score_types: insulation_count,PC1
+resol: None
+resol_comp: 32Mb
+descrip_comp: Comparison between different steps of Bottom_up experiments for the deviation of the scores
+data_file_comp: experience/Bottom_up/Try_with_intermediary_rdm/scores_data_test_adding_bottom_up.csv
+analysis_path_comp: experience/result_analysis
+output_file_comp: Comparison_scores_32Mb_Try_with_intermediary_rdm_Bottom_up.pdf
+score_types_comp: insulation_count,PC1
+rename: True
+create_data_file: True

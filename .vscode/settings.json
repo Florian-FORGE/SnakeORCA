@@ -1,0 +1,7 @@
+{
+    "python.analysis.extraPaths": [
+        "./scripts/orcanalyse",
+        "./scripts/mutations",
+        "./scripts/orca_predictions"
+    ]
+}

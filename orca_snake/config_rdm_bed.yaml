@@ -1,6 +1,6 @@
 workdir: work
 genome: /work/user/fforge/work/resources/genome/Homo_sapiens.GRCh38.dna.primary_assembly/sequence.fa
-experiments: /work/user/fforge/work/orca_snake/lil_rdm_bed.tsv
+experiments: /work/user/fforge/work/orca_snake/experiences.tsv
 region: chr9:1-32000000
 muttype: insertion
 nb_random: 10
