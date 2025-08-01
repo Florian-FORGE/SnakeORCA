@@ -3,7 +3,7 @@ from cooltools.lib.numutils import adaptive_coarsegrain, observed_over_expected
 from cooltools.api.eigdecomp import cis_eig
 import bioframe
 
-from scipy.stats import linregress, spearmanr
+from scipy.stats import linregress, spearmanr, rankdata
 from scipy.ndimage import gaussian_filter
 import matplotlib.pyplot as plt
 import numpy as np
@@ -140,7 +140,11 @@ def load_coolmat(coolpath: str,
     
     if balance == True:
         mat_balanced = clr.matrix(balance=True).fetch(region)
-        coolmat = adaptive_coarsegrain(mat_balanced, coolmat, max_levels = 12) 
+        coolmat = adaptive_coarsegrain(mat_balanced, coolmat, max_levels = 12)
+    
+    print(f"{np.isnan(coolmat).sum()} NaN values in the {resolution} matrix\n" \
+          f"Is the matrix filled with NaN values : {np.all(np.isnan(coolmat))}\n" \
+          f"Is there signal for the {resolution} matrix :{np.any(coolmat)}")
     
     return coolmat
 
@@ -259,9 +263,10 @@ def replace_nan_with_neighbors_mean(arr: Union[list, np.ndarray]):
     """
     if isinstance(arr, np.ndarray) and arr.ndim == 2:  # Check if arr is a 2D array
         n = arr.shape[0]
+        arr_copy = arr.copy()
         for i in range(n) :
             for j in range(n) :
-                if np.isnan(arr[i,j]) :
+                if not np.isfinite(arr[i,j]) :
                     if 3 < i < n-4 and 3 < j < n-4 :
                         neighbors = arr[i-4 : i+4, j-4 : j+4]
                     elif 2 < i < n-3 and 2 < j < n-3 :
@@ -272,39 +277,53 @@ def replace_nan_with_neighbors_mean(arr: Union[list, np.ndarray]):
                         neighbors = arr[i-1 : i+1, j-1 : j+1]
                     else :
                         neighbors = []
-                        if i > 0 :
-                            neighbors.append(arr[i-1, j])
-                        if i < n-1 :
-                            neighbors.append(arr[i+1, j])
-                        if j > 0 :
-                            neighbors.append(arr[i, j-1])
-                        if j < n-1 :
-                            neighbors.append(arr[i, j+1])
+                        l, r, u, d = False, False, False, False
+                        for k in range(4, 0, -1) :
+                            if i >= k and not l :
+                                neighbors.extend(arr[i-k:i, j].flatten())
+                                l = True
+                            if i < n-k and not r :
+                                neighbors.extend(arr[i:i+k, j].flatten())
+                                r = True
+                            if j >= k and not u :
+                                neighbors.extend(arr[i, j-k:j].flatten())
+                                u = True
+                            if j < n-k and not d :
+                                neighbors.extend(arr[i, j:j+k].flatten())
+                                d = True
+                        
+                        neighbors = np.array(neighbors, dtype=float)
 
-                    arr[i] = np.nanmean(neighbors) if (neighbors is not None and len(neighbors) != 0) else np.nanmean(arr)
+                    mask = np.isfinite(neighbors)
+                    finite_neighbors = neighbors[mask]
+                    
+                    arr_copy[i, j] = np.mean(finite_neighbors) if finite_neighbors.size > 1 else np.mean(arr[np.isfinite(arr)])
     
     elif isinstance(arr, (list, np.ndarray)) and np.array(arr).ndim == 1:  # Check if arr is 1D 
-        arr = np.array(arr)
+        arr = np.array(arr, dtype=float)
+        arr_copy = arr.copy()
         for i in range(len(arr)):
-            if np.isnan(arr[i]):
-                if 2 < i < len(arr) - 3 :
-                    neighbors = arr[i-3 : i+3]
-                elif 1 < i < len(arr) - 2 :
-                    neighbors = arr[i-2 : i+2]
-                elif 0 < i < len(arr) - 1 :
-                    neighbors = arr[i-1 : i+1]
-                else :
-                    if i > 0 :
-                        neighbors = [arr[i - 1]]
-                    if i < len(arr) - 1 :
-                        neighbors = [arr[i + 1]]
+            neighbors = []
+            l, r = False, False
+            for k in range(4, 0, -1) :
+                if i >= k and not l :
+                    neighbors.extend(arr[i-k : i])
+                    l = True
+                if i < len(arr)-k and not r :
+                    neighbors.extend(arr[i:i+k])
+                    r = True
+            
+            neighbors = np.array(neighbors, dtype=float)
                 
-                arr[i] = np.nanmean(neighbors) if neighbors is not None else np.nanmean(arr)
+            mask = np.isfinite(neighbors)
+            finite_neighbors = neighbors[mask]
+                
+            arr_copy[i] = np.mean(finite_neighbors) if finite_neighbors.size > 1 else np.mean(arr[np.isfinite(arr)])
     
     else :
         raise TypeError("The array should be either 1D or 2D. Not supported...Exiting.")
     
-    return arr
+    return arr_copy
 
 
 def normalize(values, sigma, smooth) :
@@ -337,8 +356,11 @@ def phase_vectors(vect, phasing_track):
     phasing_track = np.asarray(phasing_track).ravel()
 
     mask = np.isfinite(vect)
+
+    x_rank = rankdata(phasing_track[mask])
+    y_rank = rankdata(vect[mask])
     
-    corr = spearmanr(phasing_track[mask], vect[mask]).statistic
+    corr = spearmanr(x_rank, y_rank).statistic
 
     vect = np.sign(corr) * vect
 
@@ -650,6 +672,7 @@ class Matrix():
         if self._PC1 is None :
             m = get_property(self, self.which_matrix("PC1"))
             A = replace_nan_with_neighbors_mean(m)
+            # A -= np.mean(A)
             
             try :
                 phasing_track = self.get_phasing_track(genome_path=genome_path)["GC"].values
@@ -658,10 +681,10 @@ class Matrix():
                 phasing_track = None
                         
             _, pc1 = cis_eig(A = A, n_eigs = 1, phasing_track=phasing_track)
-            
+                        
             pc1 = pc1[0]
             pc1 = replace_nan_with_neighbors_mean(list(pc1))
-            
+
             self._PC1 = pc1.tolist()
         return self._PC1
     
@@ -2565,7 +2588,31 @@ def _regression_(ax: axes.Axes,
         values = phase_vectors(values, ref_val)
         
         array = np.array([values, ref_val])
+
+        # Filtering lines with NaN values
         array = array[~np.isnan(array).any(axis=1)]
+
+        # Filtering lines with outliers too strongly divergent outliers
+        # Using Modified Z-score
+        diffs = np.abs(array[0] - array[1])
+        if not np.ptp(diffs) == 0 :
+            median = np.median(diffs)
+            mad = np.median(np.abs(diffs - median))
+            mod_z_scores = 0.6745 * (diffs - median) / mad
+            mask = np.abs(mod_z_scores) < 3.5
+            array = array[:, mask]
+
+        # # Using Interquartile Range (IQR)
+        # diffs = np.abs(array[0] - array[1])
+        # if not np.ptp(diffs) == 0 :
+        #     q1 = np.percentile(diffs, 25)
+        #     q3 = np.percentile(diffs, 75)
+        #     iqr = q3 - q1
+        #     lower_bound = q1 - 1.5 * iqr
+        #     upper_bound = q3 + 1.5 * iqr
+        #     mask = (diffs >= lower_bound) & (diffs <= upper_bound)
+        #     array = array[:, mask]
+
         
         ax.plot(array[1], array[0], "o", color=color, alpha=alpha)
         
@@ -2573,6 +2620,11 @@ def _regression_(ax: axes.Axes,
         regression_line = slope * array[1] + intercept
         
         SSD = np.sum((array[0] - regression_line) ** 2)
+
+        x_rank = rankdata(array[1])
+        y_rank = rankdata(array[0])
+
+        rho = spearmanr(x_rank, y_rank).statistic
 
         title = "_".join([x for x in [comp_name, resol, score_type] if x is not None])
         if score_type is None :
@@ -2584,7 +2636,7 @@ def _regression_(ax: axes.Axes,
         
         ax.plot(array[1], regression_line, color=reg_color, label="Regression Line")
             
-        ax.text(0.05, 0.95, f"r = {r:.2f}\nSSD = {SSD:.2f}",
+        ax.text(0.05, 0.95, f"r_p = {r:.2f}\nr_s = {rho:.2f}\nSSD = {SSD:.2f}",
                 transform=ax.transAxes, fontsize=12, verticalalignment='top',
                 bbox=dict(boxstyle="round", facecolor="white"))
 
@@ -3107,7 +3159,8 @@ class CompareMatrices():
             ratios = (nb_comp + 1) * ([4] + [0.25 for i in range(nb_scores)])
             
             gs = GridSpec(nrows=nb_graphs, ncols=len(self.ref.di), height_ratios=ratios)
-            f = plt.figure(clear=True, figsize=(20*len(self.ref.di), 22*(len(self.comp_dict)+1)))
+            f = plt.figure(clear=True, figsize=(20*len(self.ref.di), 23*(len(self.comp_dict)+1)))
+            f.subplots_adjust(hspace=.5, top=0.92, bottom=0.05)
             
             # Heatmap_ref
             self.ref._heatmaps(gs=gs, f=f, i=0, j=0, show=False, name="Reference", 
@@ -3154,7 +3207,8 @@ class CompareMatrices():
                     alpha: float, 
                     _color: dict, 
                     ax: axes.Axes = None, 
-                    score_type: str = None) :
+                    score_type: str = None, 
+                    set_y_lim: bool = False) :
         """
         Function to plot the regression of the values of each compared matrix
         against the reference values for each resolution. It creates a scatter plot
@@ -3235,7 +3289,8 @@ class CompareMatrices():
                                   color=color, ref_name="Reference (WT)", comp_name=names, 
                                   resol=resol, score_type=score_type)
 
-                _set_ylim(data=comp, ax=ax)
+                if set_y_lim :
+                    _set_ylim(data=comp, ax=ax)
         
                 j+=1
             i+=1
@@ -3323,7 +3378,8 @@ class CompareMatrices():
     def scores_regression(self,
                           outputfile: str = None,
                           score_type: str = "insulation_count",
-                          merge_data: bool = False):
+                          merge_data: bool = False, 
+                          set_y_lim: bool = False):
         """
         Method that produces regression for one kind of score and by 
         comparing the values of each matrix in the comp_dict to the 
@@ -3384,7 +3440,8 @@ class CompareMatrices():
                                         _alpha=_alpha, _color=_color, score_type=score_type)
             else : 
                 self._regression(comp=score_comp, ref=score_ref, gs=gs, f=f, 
-                                 alpha=alpha, _color=_color, score_type=score_type)
+                                 alpha=alpha, _color=_color, score_type=score_type, 
+                                 set_y_lim=set_y_lim)
                 
             if outputfile: 
                 plt.savefig(outputfile, transparent=True)
@@ -3448,7 +3505,8 @@ class CompareMatrices():
         
         else :
             self._regression(comp=comp, ref=ref, gs=gs, f=f, 
-                                 alpha=alpha, _color=_color)
+                                 alpha=alpha, _color=_color,
+                                 set_y_lim=True)
                 
         if outputfile: 
             plt.savefig(outputfile)

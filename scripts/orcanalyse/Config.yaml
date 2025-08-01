@@ -11,13 +11,20 @@ COLOR_CHART:
   IF: "#3B0B47"
 
 REGIONS: 
-  region_ref: {"1Mb": ["chr9", 15496000, 16496000], 
-               "2Mb": ["chr9", 14992000, 16992000], 
-               "4Mb": ["chr9", 13984000, 17984000], 
-               "8Mb": ["chr9", 11968000, 19968000], 
-               "16Mb": ["chr9", 7936000, 23936000], 
+  # region_ref: {"1Mb": ["chr9", 15496000, 16496000], 
+  #              "2Mb": ["chr9", 14992000, 16992000], 
+  #              "4Mb": ["chr9", 13984000, 17984000], 
+  #              "8Mb": ["chr9", 11968000, 19968000], 
+  #              "16Mb": ["chr9", 7936000, 23936000], 
+  #              "32Mb": ["chr9", 0, 32000000]}
+  region_ref: {"1Mb": ["chr9", 15368000, 16368000], 
+               "2Mb": ["chr9", 14864000, 16864000], 
+               "4Mb": ["chr9", 13856000, 17856000], 
+               "8Mb": ["chr9", 11840000, 19840000], 
+               "16Mb": ["chr9", 7808000, 23808000], 
                "32Mb": ["chr9", 0, 32000000]}
-  offset: 94848000
+  # offset: 94848000
+  offset: 0
 
 # TF Dificile à comprendre....
 WHICH_MATRIX:
@@ -25,22 +32,22 @@ WHICH_MATRIX:
     heatmap: _obs_o_exp
     regression: _obs_o_exp
     count: _obs
-    correl: _obs
-    PC1: _obs
+    correl: _obs_o_exp
+    PC1: _obs_o_exp
     aif: _obs
   OrcaMatrix:
     heatmap: log_obs_o_exp
     regression: log_obs_o_exp
     count: log_obs
-    correl: log_obs
-    PC1: log_obs
+    correl: log_obs_o_exp
+    PC1: obs_o_exp
     aif: obs
   RealMatrix:
     heatmap: log_obs_o_exp
     regression: log_obs_o_exp
     count: log_obs
-    correl: log_obs
-    PC1: log_obs
+    correl: log_obs_o_exp
+    PC1: obs_o_exp
     aif: obs
 
 REF_GENOME: ../notebooks/resources/genome/Homo_sapiens.GRCh38.dna.primary_assembly/sequence.fa
