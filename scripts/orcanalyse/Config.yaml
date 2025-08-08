@@ -8,6 +8,7 @@ COLOR_CHART:
   insulation_count: blue
   PC1: green
   insulation_correl: red
+  gc_cov: "#D2691E"
   IF: "#3B0B47"
 
 REGIONS: 
@@ -94,6 +95,9 @@ SCATTER_PARAMETERS:
       insulation_correl:
         wtd: red
         rdm: "#FF9933"
+      gc_cov:
+        wtd: "#A52A2A"
+        rdm: "#D2691E"
 
 DISPERSION_COLOR:
   insulation_count: "ch:s=2.75, rot=.1, dark=.7, light=.3, hue=.5, gamma=.9"

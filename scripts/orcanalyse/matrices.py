@@ -487,6 +487,7 @@ class Matrix():
         self._insulation_count = None
         self._insulation_correl = None
         self._PC1 = None
+        self._gc_cov = None
         self._IF = None
         self._compartment = None
                 
@@ -656,8 +657,20 @@ class Matrix():
         genome = bioframe.load_fasta(genome_path, engine="pyfaidx")
 
         gc_cov = bioframe.frac_gc(bins, genome)
+        
+        gc_cov = gc_cov["GC"].tolist()
 
         return gc_cov
+    
+    @property
+    def gc_cov(self):
+        if self._gc_cov is None:
+            try :
+                self._gc_cov = self.get_phasing_track()
+            except Exception as e:
+                logging.error(f"Error while getting GC coverage: {e}")
+                return None
+        return self._gc_cov
 
     def get_PC1(self, genome_path: str = None) -> list :
         """
@@ -675,13 +688,16 @@ class Matrix():
             # A -= np.mean(A)
             
             try :
-                phasing_track = self.get_phasing_track(genome_path=genome_path)["GC"].values
+                phasing_track = self.get_phasing_track(genome_path=genome_path)
             
             except:
                 phasing_track = None
+            
+            if isinstance(phasing_track, list):
+                phasing_track = np.array(phasing_track)
                         
             _, pc1 = cis_eig(A = A, n_eigs = 1, phasing_track=phasing_track)
-                        
+
             pc1 = pc1[0]
             pc1 = replace_nan_with_neighbors_mean(list(pc1))
 
@@ -949,7 +965,7 @@ class Matrix():
 
     @property 
     def scores(self):
-        return {"insulation_count" : self.insulation_count, "insulation_correl" : self.insulation_correl, "PC1" : self.PC1}
+        return {"insulation_count" : self.insulation_count, "insulation_correl" : self.insulation_correl, "PC1" : self.PC1, "gc_cov": self.gc_cov}
 
 
     def position2bin(self, position: int) -> int :
@@ -1034,11 +1050,12 @@ class Matrix():
                        ax: axes.Axes = None, 
                        title: str = None, 
                        show_prop: bool = True, 
-                       color: str = "#9900A7"):
+                       color: str = "#E78AC3", 
+                       orientation: str = "horizontal"):
         """
         Method to compute the histogram of the mutations in the matrix.
         
-        Reurns
+        Parameters
         ----------
         gs : GridSpec
             the grid layout to place subplots within a figure.
@@ -1056,8 +1073,11 @@ class Matrix():
             if True, the histogram will show the proportion of mutations per bin.
         color : str
             the color of the histogram bars.
+        orientation : str {'vertical', 'horizontal'}, default: 'vertical'
+            If 'horizontal', `~.Axes.barh` will be used for bar-type histograms
+            and the *bottom* kwarg will be the left edges.
 
-        Reurns
+        Returns
         ----------
         the axis of the histogram plot.
         """
@@ -1077,22 +1097,40 @@ class Matrix():
             
             if (l is not None) and (bins is not None) :
                 y = range(bins)
-                ax.barh(y, l, color=color, alpha=.7, edgecolor="black", linewidth=.01)
-                ax.set_xlabel(f"Proportion Mutated\n(%)", fontsize=22)
-                # Format x-axis as percent
-                ax.xaxis.set_major_formatter(PercentFormatter(xmax=1.0, decimals=1, symbol=''))
-                ax.set_ylabel("")
-                if np.max(l) > .8 :
-                    ax.set_xlim(0, 1)
-                else : 
-                    ax.set_xlim(auto=True)
-                ax.set_ylim(0, 249)
-                ax.invert_yaxis()
-                ax.set_yticks(ticks=ticks, labels=f_p_val)
-                ax.tick_params(axis='x', labelsize=22)
-                ax.invert_yaxis()
+                if orientation == "horizontal" :
+                    ax.barh(y, l, color=color, alpha=.7, edgecolor="black", linewidth=.01)
+                    ax.set_xlabel(f"Proportion Mutated\n(%)", fontsize=22)
+                    # Format x-axis as percent
+                    ax.xaxis.set_major_formatter(PercentFormatter(xmax=1.0, decimals=1, symbol=''))
+                    ax.set_ylabel("")
+                    if np.max(l) > .8 :
+                        ax.set_xlim(0, 1)
+                    else : 
+                        ax.set_xlim(auto=True)
+                    ax.set_ylim(0, 249)
+                    ax.invert_yaxis()
+                    ax.set_yticks(ticks=ticks, labels=f_p_val)
+                    ax.tick_params(axis='x', labelsize=22)
+                    
+                    
+                elif orientation == "vertical" :
+                    ax.bar(y, l, color=color, alpha=.7, edgecolor="black", linewidth=.01)
+                    ax.set_ylabel(f"Proportion Mutated (%)", fontsize=22)
+                    # Format y-axis as percent
+                    ax.yaxis.set_major_formatter(PercentFormatter(xmax=1.0, decimals=1, symbol=''))
+                    ax.set_xlabel("")
+                    if np.max(l) > .8 :
+                        ax.set_ylim(0, 1)
+                    else : 
+                        ax.set_ylim(auto=True)
+                    ax.set_xlim(0, 249)
+                    ax.set_xticks(ticks=ticks, labels=f_p_val)
+                    ax.tick_params(axis='y', labelsize=22)
+                                        
+                else :
+                    raise ValueError(f"Orientation {orientation} is not supported. Use 'horizontal' or 'vertical'.")
+                
                 ax.set_title(f"{title}", fontsize=22)
-                ax.invert_yaxis()
                 return ax
             else :
                 logging.info("There is no information about mutations in this Matrix object...histogram " \
@@ -1105,15 +1143,25 @@ class Matrix():
                 l = [bin_idx for bin_idx in mut_pos if 0<=bin_idx<=249]
 
             if (l is not None) and (bins is not None) :
-                ax.hist(l, bins=bins, orientation="horizontal", density=False, alpha=.7, color=color, edgecolor="black", linewidth=.01)
-                ax.set_xlabel("Number of Mutations", fontsize=18)
-                ax.set_ylabel("")
-                ax.set_ylim(0, 249)
-                ax.set_yticks(ticks=ticks, labels=f_p_val)
-                ax.tick_params(axis='x', labelsize=18)
-                ax.invert_yaxis()
+                ax.hist(l, bins=bins, orientation=orientation, density=False, alpha=.7, 
+                        color=color, edgecolor="black", linewidth=.01)
+                if orientation == "horizontal" :
+                    ax.set_xlabel("Number of Mutations", fontsize=18)
+                    ax.set_ylabel("")
+                    ax.set_ylim(0, 249)
+                    ax.set_yticks(ticks=ticks, labels=f_p_val)
+                    ax.tick_params(axis='x', labelsize=18)
+                    ax.invert_yaxis()
+                    
+                elif orientation == "vertical" :
+                    ax.set_ylabel("Number of Mutations", fontsize=18)
+                    ax.set_xlabel("")
+                    ax.set_xlim(0, 249)
+                    ax.set_xticks(ticks=ticks, labels=f_p_val)
+                    ax.tick_params(axis='y', labelsize=18)
+
                 ax.set_title(f"{title}", fontsize=22)
-                
+                return ax
             
             else :
                 logging.info("There is no information about mutations in this Matrix object...histogram " \
@@ -1516,9 +1564,10 @@ class Matrix():
 
         score = get_property(self, score_type)
         ticks = [i for i in range(0, len(score)+1, len(score)//(len(f_p_val)-1))]
+        color = config_data["COLOR_CHART"][score_type] if score_type in config_data["COLOR_CHART"] else "black"
 
         ax.set_xlim(0, 250)
-        ax.plot(score, color=config_data["COLOR_CHART"][score_type])
+        ax.plot(score, color=color)
         ax.set_ylabel("%s" % score_type)
         ax.set_xticks(ticks=ticks, labels=f_p_val)
         ax.set_title("%s" % title)
@@ -1672,21 +1721,6 @@ class OrcaMatrix(Matrix):
         
         return scores
 
-    def get_PC1(self, genome_path: str = None) -> list :
-        m = get_property(self, self.which_matrix("PC1"))
-        A = replace_nan_with_neighbors_mean(m)
-
-        A = np.exp(A)
-            
-        phasing_track = self.get_phasing_track(genome_path=genome_path)["GC"].values
-                    
-        _, pc1 = cis_eig(A = A, n_eigs = 1, phasing_track=phasing_track)
-        
-        pc1 = pc1[0]
-        pc1 = replace_nan_with_neighbors_mean(list(pc1))
-        
-        self._PC1 = pc1.tolist()
-        return pc1.tolist()
 
 
 class RealMatrix(Matrix):
@@ -4155,7 +4189,8 @@ class CompareMatrices():
                        i: int = 0, 
                        j: int = 0,
                        ax: axes.Axes = None, 
-                       show_prop: bool = True,
+                       show_prop: bool = True, 
+                       tested_mut_name: str = "orcarun_Wtd_mut"
                        ):
         """
         Method to compute the histogram of the mutations in the matrix.
@@ -4191,7 +4226,7 @@ class CompareMatrices():
         ax = f.add_subplot(gs[i, j]) if ax is None else ax
 
         xlim = [0.0, 0.0]
-        rdm_muts = {name: self.comp_dict[name].di[resol] for name in self.comp_dict.keys() if name != "orcarun_Wtd_mut"}
+        rdm_muts = {name: self.comp_dict[name].di[resol] for name in self.comp_dict.keys() if name != tested_mut_name}
         for name, mat in rdm_muts.items():
             proportions = mat.mutation_proportion_per_bin()
             if max(proportions) > xlim[1] :
@@ -4202,7 +4237,7 @@ class CompareMatrices():
                 
         ax1 = self.ref.di[resol].hist_mutations(gs=gs, f=f, ax=ax, show_prop=show_prop)
         xlim1 = ax.get_xlim() if ax1 is not None else (0.0, 0.0)
-        ax2 = self.comp_dict["orcarun_Wtd_mut"].di[resol].hist_mutations(gs=gs, f=f, ax=ax, title=f"Mutation repartition\n", show_prop=show_prop)
+        ax2 = self.comp_dict[tested_mut_name].di[resol].hist_mutations(gs=gs, f=f, ax=ax, title=f"Mutation repartition\n", show_prop=show_prop)
         xlim2 = ax.get_xlim() if ax2 is not None else (0.0, 0.0)
 
         xlim = [np.min([xlim[0], xlim1[0], xlim2[0]]), np.max([xlim[1], xlim1[1], xlim2[1]])]
