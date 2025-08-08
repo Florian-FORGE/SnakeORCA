@@ -104,9 +104,8 @@ def load_attributes_orca_matrix(orcapredfile, normmatfile):
     resolution = metadata['resol']
     orcapred = np.loadtxt(orcapredfile, comments="#")
     normmat = np.loadtxt(normmatfile, comments="#")
-    genome = metadata["genome"]
     
-    return region, resolution, orcapred, normmat, genome
+    return region, resolution, orcapred, normmat
 
 def load_coolmat(coolpath: str, 
                  region: list, 
@@ -614,13 +613,13 @@ class Matrix():
         is not set, it uses the BASE_PATH_GENOME from the config_data.
         """
         if genome_path is None :
-            if not os.path.isabs(self.refgenome):
-                if not self.refgenome.split('/')[-1] == "sequence.fa" :
-                    genome_path = f"./{self.refgenome}/sequence.fa"
+            if not os.path.isabs(self.genome):
+                if not self.genome.split('/')[-1] == "sequence.fa" :
+                    genome_path = f"./{self.genome}/sequence.fa"
                 else :
-                    genome_path = f"./{self.refgenome}"
+                    genome_path = f"./{self.genome}"
             else :
-                genome_path = self.refgenome
+                genome_path = self.genome
         
         if not os.path.isabs(genome_path):
             try :
@@ -1648,10 +1647,11 @@ class OrcaMatrix(Matrix):
                  orcapredfile: str, 
                  normmatfile: str, 
                  gtype: str,
+                 genome: str,
                  refgenome: str, 
                  list_mutations: list, 
                  pos_origin: list):
-        region, resolution, self.orcapred, self.normmat, genome \
+        region, resolution, self.orcapred, self.normmat \
                     = load_attributes_orca_matrix(orcapredfile, normmatfile)
         super().__init__(region, resolution, genome, gtype, list_mutations, refgenome, pos_origin)
         self._log_obs = None
@@ -2074,6 +2074,7 @@ def build_MatrixView(mtype: str,
             di[resol] = OrcaMatrix(orcapredfile=f"{path}/pred_predictions_{resol}.txt", 
                                    normmatfile=f"{path}/pred_normmats_{resol}.txt", 
                                    gtype=gtype,
+                                   genome=kwargs["genome"],
                                    refgenome=refgenome, 
                                    list_mutations=list_mutations,
                                    pos_origin=pos_origin)
@@ -4342,7 +4343,8 @@ def _build_MatrixView_(row: NamedTuple,
                                gtype=row.gtype, 
                                list_mutations=list_mutations, 
                                pos_origin=pos_origin, 
-                               path=row.path)
+                               path=row.path,
+                               genome=row.genome)
     
     else :
         raise TypeError(f"{row.mtype} is not a supported matrix type. Only 'RealMatrix' "
