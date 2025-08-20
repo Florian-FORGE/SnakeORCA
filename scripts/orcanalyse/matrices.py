@@ -160,7 +160,7 @@ def get_obs_over_exp(mat):
     return OE
 
 
-def _get_insulation_score(m: np.ndarray, 
+def _get_insulation_score_line(m: np.ndarray, 
                           w: int = 5) -> list :
         """
         Function to compute the insulation score for a given matrix m,
@@ -196,7 +196,7 @@ def _get_insulation_score(m: np.ndarray,
 
         return scores
 
-def _get_insulation_score_alt(m: np.ndarray, 
+def _get_insulation_score_square(m: np.ndarray, 
                               w: int = 5) -> list :
         """
         Function to compute the insulation score for a given matrix m,
@@ -213,7 +213,8 @@ def _get_insulation_score_alt(m: np.ndarray,
         s = 0
         nv = 0
         for i in range(w, (n-w)):
-            cnt_space = [m[u,k] for u,k in {j:j for j in range(i-w, i+w+1)}.items()]
+            cnt_space = [m[u, k] for u in range(i-w, i+1) for k in range(i, i+w+1)]
+            nb_val = len(cnt_space)
             for elt in cnt_space:
                 if np.isfinite(elt):
                     s+=elt
@@ -221,7 +222,7 @@ def _get_insulation_score_alt(m: np.ndarray,
             if nv == 0 :
                 score = np.nan
             else :
-                score = (s/nv)*((2*w + 1)**2)
+                score = (s/nv)*(nb_val)
             scores.append(score)
             s = 0
             nv = 0
@@ -471,7 +472,8 @@ class Matrix():
 
 
     def __init__(self, region: list, resolution: str, genome: str, gtype: str = "wt", 
-                 list_mutations: List[list] = None, refgenome: str = None, pos_origin: list = None):
+                 list_mutations: List[list] = None, refgenome: str = None, 
+                 pos_origin: list = None, name: str = None):
         self.region = region
         self.resolution = resolution
         self.references = region + [resolution]
@@ -480,6 +482,7 @@ class Matrix():
         self.l_mut = list_mutations
         self.refgenome = refgenome
         self.pos_origin = pos_origin
+        self.name = name if name is not None else f"{self.__class__.__name__}_{self.gtype}"
         self._obs_o_exp = None
         self._obs = None
         self._expect = None
@@ -518,7 +521,7 @@ class Matrix():
         """
         m = get_property(self, self.which_matrix("count"))
         
-        scores = _get_insulation_score(m=m, w=w)
+        scores = _get_insulation_score_square(m=m, w=w)
         
         return scores
     
@@ -550,7 +553,7 @@ class Matrix():
         m = (m - np.min(m)) / (np.max(m) - np.min(m))
         m = np.corrcoef(m)
 
-        scores = _get_insulation_score(m=m, w=w)
+        scores = _get_insulation_score_square(m=m, w=w)
         
         return scores
 
@@ -1547,12 +1550,25 @@ class Matrix():
             the grid layout to place subplots within a figure.
         - f : figure.Figure
             the object that holds all plot elements.
-        title : str
+        - ax : axes.Axes
+            the axis on which the score should be plotted.
+        - title : str
             the title of the _score_plot() (e.g. "PC1" or "insulation_count")
+        - score_type : str
+            the type of score to plot (e.g. "PC1", "insulation_count", "insulation_corel", "gc_cov").
         - i : int
             the line in which the heatmap should plotted.
         - j : int
             the column in which the heatmap should be plotted.
+        
+        Returns
+        ----------
+         ax : figure.Axes
+            the object that holds the plot elements of the score plot.
+
+         Side effects
+         ----------
+         Produces the plot associated with the specified score type.
          """
         gs = GridSpec(nrows=1, ncols=1) if gs is None else gs
         f = plt.figure(clear=True, figsize=(15, 10)) if f is None else f
@@ -1570,6 +1586,8 @@ class Matrix():
         ax.set_ylabel("%s" % score_type)
         ax.set_xticks(ticks=ticks, labels=f_p_val)
         ax.set_title("%s" % title)
+
+        return ax
 
    
     def _save_scores(self, 
@@ -1650,10 +1668,11 @@ class OrcaMatrix(Matrix):
                  genome: str,
                  refgenome: str, 
                  list_mutations: list, 
-                 pos_origin: list):
+                 pos_origin: list,
+                 name: str = None):
         region, resolution, self.orcapred, self.normmat \
                     = load_attributes_orca_matrix(orcapredfile, normmatfile)
-        super().__init__(region, resolution, genome, gtype, list_mutations, refgenome, pos_origin)
+        super().__init__(region, resolution, genome, gtype, list_mutations, refgenome, pos_origin, name=name)
         self._log_obs = None
         
     
@@ -1717,7 +1736,7 @@ class OrcaMatrix(Matrix):
         m = (m - np.min(m)) / (np.max(m) - np.min(m))
         m = np.exp(m)
 
-        scores = _get_insulation_score(m=m, w=w)
+        scores = _get_insulation_score_square(m=m, w=w)
         
         return scores
 
@@ -1794,8 +1813,9 @@ class RealMatrix(Matrix):
                  genome: str,
                  refgenome: str, 
                  list_mutations: list, 
-                 pos_origin: list):
-        super().__init__(region, resolution, genome, gtype, list_mutations, refgenome, pos_origin)
+                 pos_origin: list, 
+                 name: str = None):
+        super().__init__(region, resolution, genome, gtype, list_mutations, refgenome, pos_origin, name=name)
         self.coolmat = load_coolmat(coolpath, region, resolution, balanced)
         self.coolpath = coolpath
         self._log_obs = None
@@ -2429,7 +2449,7 @@ def heatmap_matrices_comp(mat1: Matrix, mat2: Matrix, comp_type: str, mutation: 
     - The function uses the `mat1.saddle_mat` attribute to get the saddle matrix
       if saddle sorting is used.
     """
-    f_p_val, titles, cmap = mat1.formatting(f"Comparison({mat1.genome}-{mat2.genome})")
+    f_p_val, titles, cmap = mat1.formatting(f"Comparison({mat1.name}-{mat2.name})")
 
     ax = f.add_subplot(gs[i, j])
 
@@ -2478,11 +2498,11 @@ def heatmap_matrices_comp(mat1: Matrix, mat2: Matrix, comp_type: str, mutation: 
                 text.set_fontsize(20)
     if comp_type == "triangular" :
         space = .05 + .025 * len(handles) if ((mutation or compartment) and handles) else .05
-        ax.text(.97, 1-space, f"{mat1.genome}",
+        ax.text(.97, 1-space, f"{mat1.name}",
                 transform=ax.transAxes, fontsize=22,
                 verticalalignment='top', horizontalalignment='right',
                 bbox=dict(boxstyle="round", facecolor="white"))
-        ax.text(.03, space, f"{mat2.genome}",
+        ax.text(.03, space, f"{mat2.name}",
                 transform=ax.transAxes, fontsize=22,
                 verticalalignment='bottom', horizontalalignment='left',
                 bbox=dict(boxstyle="round", facecolor="white"))
