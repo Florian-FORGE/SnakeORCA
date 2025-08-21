@@ -209,7 +209,7 @@ class Mutator():
         mutation.alt = sequence
 
 
-    def permutations_inter(self, mutation: Mutation, binsize: int = None):
+    def permutations_intra(self, mutation: Mutation, binsize: int = None):
         """
         Interval will be shuffled by bins of a given size. 
         The binsize is specified in the config_mut.py file.
@@ -246,7 +246,7 @@ class Mutator():
         mutation.alt = ''.join(new_order_seq)
         
     
-    def permutations_intra(self, mutations: List[Mutation]) :
+    def permutations_inter(self, mutations: List[Mutation]) :
         """
         Intervals from the mutations list will be shuffled, so that they are 
         not in the same order as in the input file.
@@ -281,17 +281,17 @@ class Mutator():
         Mutate the sequence for each interval according to the mutation type
         and returns the set of mutated chromosomes as biopython SeqRecords.
         """
-        if all(mutation.op == "permutations_intra" for mutation in self.mutations) :
-            # If all mutations are permutations_intra, we shuffle the specified bins of each chromosome
-            self.permutations_intra(self.mutations)
+        if all(mutation.op == "permutations_inter" for mutation in self.mutations) :
+            # If all mutations are permutations_inter, we shuffle the specified bins of each chromosome
+            self.permutations_inter(self.mutations)
 
         else :
             mutations = self.mutations
-            if any(mutation.op == "permutations_intra" for mutation in self.mutations) :
-                mutations_intra = [mutation for mutation in self.mutations if mutation.op == "permutations_intra"]
-                mutations = [mutation for mutation in self.mutations if mutation.op != "permutations_intra"]
+            if any(mutation.op == "permutations_inter" for mutation in self.mutations) :
+                mutations_inter = [mutation for mutation in self.mutations if mutation.op == "permutations_inter"]
+                mutations = [mutation for mutation in self.mutations if mutation.op != "permutations_inter"]
 
-                self.permutations_intra(mutations_intra)
+                self.permutations_inter(mutations_inter)
 
             for mutation in mutations:
                 self.chromosome_mutations[mutation.chrom] += 1
@@ -303,8 +303,8 @@ class Mutator():
                     self.invert(mutation)
                 elif mutation.op == "insertion":
                     self.insert(mutation)
-                elif mutation.op == "permutations_inter":
-                    self.permutations_inter(mutation)
+                elif mutation.op == "permutations_intra":
+                    self.permutations_intra(mutation)
                 else:
                     self.chromosome_mutations[mutation.chrom] -= 1
                     raise ValueError("%s is not a valid operation" % mutation.op)
@@ -388,10 +388,10 @@ class Mutator():
         data = []
         for mutation in self.mutations:
             trace = mutation.trace()
-            if mutation.op == "permutations_inter" :
+            if mutation.op == "permutations_intra" :
                 trace["ref_seq"] = mutation.ref_bins
                 trace["bin_order"] = mutation.bin_order
-            elif mutation.op == "permutations_intra" :
+            elif mutation.op == "permutations_inter" :
                 trace["seq_order"] = mutation.bin_order
             data.append(trace)
         return pd.DataFrame(data)
