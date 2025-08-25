@@ -1,8 +1,8 @@
 workdir: work
-output_repo: experience/shuf_bins_106_138Mb
+output_repo: experience/shuf_bins_0_32Mb
 genome: /work/user/fforge/work/resources/genome/Homo_sapiens.GRCh38.dna.primary_assembly/sequence.fa
-experiments: /work/user/fforge/work/orca_snake/experiences.tsv
-region: chr9:106394717-138394717
+experiments: /work/user/fforge/work/orca_snake/lil_tiny_new_rdm.tsv
+region: chr9:0-32000000
 muttype: shuffle
 nb_random: 10
 distrib: shuffle_bins
@@ -15,5 +15,10 @@ merged_by: rdm
 resol: None
 show_rdm: False
 resol_comp: 32Mb
+descrip_comp: Comparison between wanted and random mutations for the deviation of the scores
+data_file_comp: experience/scores_data_shuf_bins_0_32Mb.csv
+analysis_path_comp: experience/result_analysis
+output_file_comp: Comparison_scores_32Mb_shuf_bins_0_32Mb.pdf
+score_types_comp: insulation_count,PC1
 rename: True
 create_data_file: True
