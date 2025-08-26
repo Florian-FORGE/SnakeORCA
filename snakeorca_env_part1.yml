@@ -1,0 +1,15 @@
+name: snakeorca_env
+channels:
+  - annaconda
+  - bioconda
+  - defaults
+  - conda-forge
+dependencies: 
+  - python=3.11
+  - gcc
+  - cooltools
+  - cython
+  - pandas  
+  - matplotlib
+  - docopt
+  

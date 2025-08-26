@@ -1,0 +1,1 @@
+Using absolute paths for ressources in the .tsv and .yaml files is highly recommended to be sure of properly accessing the data.

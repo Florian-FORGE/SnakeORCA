@@ -1,0 +1,17 @@
+name: snakeorca_env
+channels:
+  - annaconda
+  - bioconda
+  - defaults
+dependencies: 
+  - scikit-learn
+  - pygenometracks
+  - tqdm
+  - pyranges
+  - pybigwig
+  - statsmodels
+  - plotly
+  - seaborn
+  - pip
+  - pip:
+    - seqstr

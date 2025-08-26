@@ -1,0 +1,4 @@
+expe	muttype	binsize_permut	nb_random	mutations	expe_description	names
+KO_CTCF	shuffle		2	../test_resources/test_annot/chr9_20_CTCF_btw_16131000_16143000.bed	Knocking out 20 CTCF binding sites	Knock_Out_20_CTCF
+Permut_intra	permutations_intra	128000	0	../test_resources/test_annot/permut_intra_btw_13828000_and_18048000.bed	Permutating 33 bins of 128kb inside A compartment –between 13.8 and 18MB--	Permutation_inside_compartment_A
+Permut_inter	permutations_inter		0	../test_resources/test_annot/permut_inter_11_12Mb_and_19_20MB.bed	Permutating 640kb from compartment A with 640kb from compartment B	Permutation_compartment_A_and_B

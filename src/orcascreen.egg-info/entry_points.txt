@@ -1,0 +1,16 @@
+[console_scripts]
+abs_rdm_genome = orcascreen.cli.abs_rdm_genome:main
+absolute_to_relative = orcascreen.cli.absolute_to_relative:main
+annot_from_traces = orcascreen.cli.Bottom_up.annot_from_traces:main
+bottom_up_expe_compared = orcascreen.cli.Bottom_up.bottom_up_expe_compared:main
+bottom_up_mutate = orcascreen.cli.Bottom_up.bottom_up_mutate:main
+bottom_up_predict = orcascreen.cli.Bottom_up.bottom_up_predict:main
+bottom_up_preliminary_analysis = orcascreen.cli.Bottom_up.bottom_up_preliminary_analysis:main
+ggplot_bottom_up_exp_compared = orcascreen.cli.ggplot.ggplot_bottom_up_exp_compared:main
+ggplot_expe_compared = orcascreen.cli.ggplot.ggplot_expe_compared:main
+multiple_mut_analysis = orcascreen.cli.multiple_mut_analysis:main
+mutate_and_rdm = orcascreen.cli.mutate_and_rdm:main
+permutation_analysis = orcascreen.cli.permutation_analysis:main
+predict_and_run_descript = orcascreen.cli.predict_and_run_descript:main
+preliminary_analysis = orcascreen.cli.preliminary_analysis:main
+test_ggplot_rdm_mut_K3K9me3 = orcascreen.cli.ggplot.test_ggplot_rdm_mut_K3K9me3:main
