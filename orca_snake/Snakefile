@@ -1,15 +1,20 @@
 import pandas as pd
 import os
 
+# Helper to resolve paths
+def resolve_path(path, base):
+    return path if os.path.isabs(path) else os.path.join(base, path)
+
 # --- Load config and experiment table ---
-experiment_file = config["experiments"]
+print(config["experiments"])
+experiment_file = resolve_path(config["experiments"], workflow.basedir)
 output_repo = config["output_repo"]
 
 experiments = pd.read_csv(experiment_file, sep='\t', dtype={"expe": str}).set_index("expe", drop=False)
-expandable_abs_to_rel = f"{output_repo}" + "/{expe}/abs_to_rel.log"
+expandable_abs_to_rel = os.path.join(output_repo, "{expe}", "abs_to_rel.log")
 l_expe = experiments.index.tolist()
 l_names = experiments["names"]
-workingdir = f"{workflow.basedir}/{config['workdir']}"
+workingdir = resolve_path(config['workdir'], workflow.basedir)
 workdir: workingdir
 
 comp_expe_names = ",".join([f"{row['expe']}:{row['names']}" for _, row in experiments.iterrows()])
@@ -38,6 +43,13 @@ def valid_expe(wildcards=None):
                 valid_experiments.append(expe_name)
     expandable=f"{output_repo}" + "/{expe}/analysis.log"
     return expand(f"{expandable}", expe=valid_experiments)
+
+def is_int_castable(val):
+    try:
+        int(val)
+        return True
+    except (ValueError, TypeError):
+        return False
 
 def comparable(wildcards=None):
     # Get the output file from the check_bed checkpoint
@@ -75,8 +87,8 @@ rule build:
 
 checkpoint abs_to_rel:
     input: 
-        genome=config["genome"],
-        mutations=lambda wildcards: experiments.loc[wildcards.expe]["mutations"]
+        genome=resolve_path(config["genome"], workflow.basedir),
+        mutations=lambda wildcards: resolve_path(experiments.loc[wildcards.expe]["mutations"], workflow.basedir)
     output:
         f"{output_repo}" + "/{expe}/abs_to_rel.log",
         f"{output_repo}" + "/{expe}/genome/reference/relative_position_mutations.bed"
@@ -85,7 +97,7 @@ checkpoint abs_to_rel:
         region=config["region"]
     shell:
         """
-        python ../scripts/snake_make/absolute_to_relative.py \
+        absolute_to_relative \
                --bed {input.mutations} \
                --fasta {input.genome} \
                --mut_path {params.outdir} \
@@ -149,17 +161,40 @@ rule mutate:
         f"{output_repo}" + "/{expe}/mutate.log"
     params:
         outdir=f"{output_repo}" + "/{expe}/genome",
-        nb_random=config["nb_random"],
+        nb_random=lambda wildcards: (
+                        experiments.loc[wildcards.expe]["nb_random"]
+                        if (
+                            "nb_random" in experiments.columns and
+                            experiments.loc[wildcards.expe]["nb_random"] not in [None, "None", ""]
+                        )
+                        else config["nb_random"]
+                    ),
         distrib=config["distrib"],
-        muttype=config["muttype"]
+        muttype=lambda wildcards: (
+                    experiments.loc[wildcards.expe]["muttype"]
+                    if (
+                        "muttype" in experiments.columns and
+                        experiments.loc[wildcards.expe]["muttype"] not in [None, "None", ""]
+                    )
+                    else config["muttype"]
+                ),
+        binsize_permut = lambda wildcards: (
+                                 int(experiments.loc[wildcards.expe]["binsize_permut"])
+                                 if (
+                                     "binsize_permut" in experiments.columns and
+                                     is_int_castable(experiments.loc[wildcards.expe]["binsize_permut"])
+                                 )
+                                 else 0
+                             )
     shell:
         """
-        python ../scripts/snake_make/mutate_and_rdm.py \
+        mutate_and_rdm \
                --abs_to_rel_log_path {input.rel_log} \
                --mut_path {params.outdir} \
                --muttype {params.muttype} \
                --nb_random {params.nb_random} \
-               --distrib {params.distrib}
+               --distrib {params.distrib} \
+               --binsize_permut {params.binsize_permut}
         """
 
 rule predict:
@@ -182,7 +217,7 @@ rule predict:
         "benchmarks/shuf_bins_106_138Mb/predict/{expe}.tsv"
     shell:
         """
-        python ../scripts/snake_make/predict_and_run_descript.py \
+        predict_and_run_descript \
                --pred_prefix {params.pred_prefix} \
                --resol_model {params.resol_model} \
                --mutate_log_path {input.mut_log} \
@@ -207,7 +242,7 @@ rule analysis:
         expe_descrip=lambda wildcards: experiments.loc[wildcards.expe]["expe_description"]
     shell:
         """
-        python ../scripts/snake_make/preliminary_analysis.py \
+        preliminary_analysis \
                --expe_descrip '{params.expe_descrip}' \
                --prediction_log_path {input.predict_log} \
                --analysis_path {params.analysis_path} \
@@ -236,7 +271,7 @@ rule compare:
         rename_flag="--rename" if bool(config["rename"] == True) else ""
     shell:
         """
-        python ../scripts/snake_make/multiple_mut_analysis.py \
+        multiple_mut_analysis \
                --descrip {params.descrip} \
                --data_file {params.data_file} \
                --analysis_path {params.analysis_path} \
