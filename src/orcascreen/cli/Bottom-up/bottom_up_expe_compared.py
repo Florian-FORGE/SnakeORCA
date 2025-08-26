@@ -18,6 +18,36 @@ from seaborn import boxenplot, color_palette
 import re
 
 
+"""
+This script generates boxplot slides comparing multiple mutation analyses based on insulation scores and PC1 scores.
+It extracts scores from multiple repositories, processes the data, and creates visualizations in a PDF format.
+It is designed to be used in a pipeline for genome mutation analysis.
+
+Usage:
+    python bottom_up_expe_compared.py --descrip "Description of the analysis"
+                                      --data_file /path/to/data_file.tsv
+                                      --analysis_path /path/to/analysis
+                                      --output_file output.pdf
+                                      --score_types insulation_count,PC1
+                                      [--create_data]
+                                      [--rename]
+                                      [--resol 32Mb]
+                                      [--wdir /path/to/working_directory]
+                                      [--expe_names expe1:name1,expe2:name2,...]
+
+Dependencies:
+    pandas
+    matplotlib
+    seaborn
+    orcascreen
+
+Note:
+    - If the data file already exists and --create_data is specified, the user will be prompted to confirm overwriting.
+    - If --rename is specified, the user will be prompted to enter experiment names corresponding to each repository.
+    - The script assumes that the repositories follow a specific naming convention for extracting experiment names.
+"""
+
+
 
 # Helper to get input with a timeout
 def prompt_with_timeout(prompt, timeout, result_container):

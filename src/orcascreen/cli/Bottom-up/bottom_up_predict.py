@@ -9,6 +9,33 @@ import orcascreen.matrices as mat
 import pandas as pd
 
 
+"""
+This script generates predictions and associated OrcaRun descriptions from a given sequence.
+It processes a sequence to generate predictions for a set of mutations (wild-type and random mutations)
+and creates associated OrcaRun descriptions. It also generates a reference OrcaRun description for the wild-type sequence.
+
+Usage:
+    python bottom_up_predict.py --resol_model <resolution_model> 
+                                --mutate_log_path <path_to_mutate_log> 
+                                --mpos <mutation_position> 
+                                --cool_resol <cool_file_resolution> 
+                                --strict <strict_processing> 
+                                --padding_chr <padding_character> 
+                                --no_cuda <use_no_cuda> 
+                                --use_memmapgenome <use_memory_mapped_genome> 
+                                --pred_path <path_to_store_predictions> 
+                                --abs_rdm_log_path <path_to_relative_genome_log> 
+                                --builder_path <path_to_store_orcarun_descriptions>
+
+Dependencies:
+    - orcascreen (custom library)
+    - pandas
+
+Notes:
+    - Ensure that the paths provided as arguments exist and are accessible.
+    - The script assumes that the input files are correctly formatted.
+"""
+
 
 
 def predict_and_orcarun_descript(resol_model: str,

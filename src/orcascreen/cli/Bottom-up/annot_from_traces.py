@@ -16,8 +16,19 @@ from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 
 """
-######### Description needs to be done
+This script reads a trace file (in tsv format) describing mutations and generates a bed file with relative positions of mutations.
+It handles overlapping intervals by merging them, in case there are many files.
+It saves the resulting bed file and a log file summarizing the operations performed.
+It is designed to be used in a pipeline for genome mutation analysis.
 
+Usage:
+    python annot_from_traces.py --trace trace1.tsv,trace2.tsv 
+                                --mut_path /path/to/output 
+                                --chrom_name fake_chr
+
+Dependencies:
+    pandas
+    biopython
 """
 
 

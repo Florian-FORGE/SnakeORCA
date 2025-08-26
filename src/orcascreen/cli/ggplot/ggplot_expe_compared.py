@@ -20,6 +20,34 @@ from plotnine import (ggplot, aes, geom_boxplot, geom_jitter, scale_fill_brewer,
 import re
 
 
+"""
+This script generates a boxplot slide for multiple mutation analyses.
+It extracts insulation scores and PC1 scores from multiple repositories and saves them to a specified data file.
+
+Usage:
+    python ggplot_expe_compared.py --data_file <data_file> 
+                                   --analysis_path <analysis_path> 
+                                   --output_file <output_file> 
+                                   --score_types <score_types> 
+                                   [--create_data] 
+                                   [--rename] 
+                                   [--resol <resol>] 
+                                   [--wdir <wdir>] 
+                                   [--expe_names <expe_names>] 
+                                   [--studied_names <studied_names>]
+
+Dependencies:
+    - pandas
+    - matplotlib
+    - plotnine
+    - orcascreen (custom library)
+
+Notes:
+    - Ensure that the orcascreen library is properly installed and accessible.
+    - The script prompts the user for experiment names if the --rename flag is set and there are fewer than 5 repositories.
+    - The data file is created or appended based on the --create_data flag.
+"""
+
 
 # Helper to get input with a timeout
 def prompt_with_timeout(prompt, timeout, result_container):
@@ -198,7 +226,7 @@ def boxplot_slide(data_file: str, analysis_path:str, output_file: str,
     - Creates a directory for the analysis if it does not exist.
     - Extracts scores data from multiple repositories and saves it to a specified data file.
     """
-    wdir = f"{os.path.abspath(os.curdir)}/{wdir}" if wdir is not None else "."
+    wdir = os.path.join(os.path.abspath(os.curdir), wdir) if wdir is not None else "."
     if create_data :
         if os.path.exists(data_file):
             logging.warning("The data file already exists...Waiting for confirmation.")
@@ -240,8 +268,11 @@ def boxplot_slide(data_file: str, analysis_path:str, output_file: str,
     
     plots_path = f"{analysis_path}/{output_file}"
 
-    if os.path.exists(plots_path) :
-        os.remove(plots_path)
+    try:
+        if os.path.exists(plots_path):
+            os.remove(plots_path)
+    except Exception as e:
+        logging.warning(f"Could not remove existing PDF: {e}")
        
     with PdfPages(plots_path, keep_empty=False) as pdf:
         name_wdth = 17 if len(names) > 5 else 27-2*len(names)
@@ -260,7 +291,7 @@ def boxplot_slide(data_file: str, analysis_path:str, output_file: str,
             ymax = _data["values"].max()
             ymax = 1.05 * ymax if ymax > 0 else .95 * ymax
 
-            _data["facet_name"] = "\n\n" + _data.apply(lambda row: wrap_text(row["facet_name"], 
+            _data["facet_name"] = data.apply(lambda row: wrap_text(row["facet_name"], 
                                                                              width=name_wdth, 
                                                                              sep="_"), axis=1)
             
@@ -277,16 +308,18 @@ def boxplot_slide(data_file: str, analysis_path:str, output_file: str,
 
             score_label = "IS" if score == "insulation_count" else score
             
-            plot_margin = 0.1
+            plot_margin = 0.01
             if len(names) > 5 :
                 if len(names)%5 != 0 :
                     plot_margin = 0.005
                     pos = 5/(len(names)*2)
                     legend_position = (0.95, pos)
                 else :
-                    legend_position = (0.95, 0.5)
+                    legend_position = (1.15, 0.5)
             else :
-                legend_position = (0.95, 0.5)
+                legend_position = (1.05, 0.5)
+            
+
             _data['hue_name'] = "\n" + _data.apply(lambda row: wrap_text(row["hue_name"], 
                                                                          width=8, 
                                                                          sep=" "), axis=1) + "\n"
@@ -304,10 +337,12 @@ def boxplot_slide(data_file: str, analysis_path:str, output_file: str,
                 theme_minimal() +
                 theme(
                     panel_spacing_y=.25*(nb_rows - 1),                              # Adjusts the spacing between facets
-                    figure_size=(60, 12.75*nb_rows),                                # Adjust as needed
+                    figure_size=(60, 25.75*nb_rows),                                # Adjust as needed
                     legend_position=legend_position,
+                    legend_box_margin=0.50,                                         # Margin around the legend box
+                    legend_box_spacing=0.50,                                        # Spacing between legend items
                     legend_title=element_blank(),
-                    legend_direction='vetical',
+                    legend_direction='vertical',
                     legend_text=element_text(size=64, weight="bold"),
                     legend_key_size=64,                                             # Overall size of legend keys
                     legend_key_height=82,                                           # Height of each key
@@ -321,7 +356,7 @@ def boxplot_slide(data_file: str, analysis_path:str, output_file: str,
                     plot_margin=plot_margin
                 ) +
                 xlab("") +
-                ylab(f"{score_label} deviation") +
+                ylab(f"\n\n\n\n{score_label} deviation") +
                 coord_cartesian(ylim=(ymin, ymax)) +
                 facet_wrap('~facet_name', ncol=5, scales='free_x')  # ncol can be adjusted
             )
@@ -339,7 +374,7 @@ def boxplot_slide(data_file: str, analysis_path:str, output_file: str,
             else :
                 top = 0.97
             fig = plot.draw()
-            fig.subplots_adjust(top=top, bottom=0.01, left=0.07)
+            fig.subplots_adjust(top=top, bottom=0.01, left=-5)
             pdf.savefig(fig)
                 
         pdf.close()

@@ -22,6 +22,35 @@ from plotnine import (
 import re
 
 
+"""
+This script generates boxplot slides for multiple mutation analyses, comparing insulation scores and PC1 scores across different experiments.
+It extracts data from specified directories, processes it, and creates visualizations using ggplot2 in Python.
+It can create a new data file or append to an existing one, and allows for customization of experiment names and score types.
+
+Usage:
+    python ggplot_bottom_up_exp_compared.py --data_file <data_file_path> 
+                                            --analysis_path <analysis_directory> 
+                                            --output_file <output_pdf_name> 
+                                            --score_types <score1,score2,...> 
+                                            [--create_data] 
+                                            [--rename] 
+                                            [--resol <resolution>] 
+                                            [--wdir <working_directory>] 
+                                            [--expe_names <expe1:name1,expe2:name2,...>] 
+                                            [--studied_names <expe1,expe2,...>]
+
+Dependencies:
+    - pandas
+    - matplotlib
+    - plotnine
+    - orcascreen (custom library)
+
+Notes:
+    - Ensure that the orcascreen library is properly installed and accessible.
+    - The script prompts the user for experiment names if the --rename flag is set and there are fewer than 5 repositories.
+    - The data file is created or appended based on the --create_data flag.
+"""
+
 
 # Helper to get input with a timeout
 def prompt_with_timeout(prompt, timeout, result_container):

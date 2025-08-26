@@ -10,6 +10,29 @@ from pysam import FastaFile
 from Bio import SeqIO
 
 
+"""
+This script applies mutations to a reference sequence and generates random mutations if specified.
+It processes a given region of a reference sequence by applying mutations from a BED file or a TSV file.
+It also generates a specified number of random mutations and applies them to the sequence.
+The mutated sequences and their corresponding traces are saved to the specified output path.
+
+Usage:
+    python bottom_up_mutate.py --abs_rdm_log_path /path/to/rdm.log 
+                               --annot_f_traces_log_path /path/to/annot_f_traces.log
+                               --mut_path /path/to/output
+
+Dependencies:
+    pandas
+    biopython
+    pysam
+    orcascreen (custom library)
+
+Notes:
+    - The function ensures that random mutations do not overlap with existing mutations.
+    - The random seed for generating mutations is incremented for each random mutation set.
+"""
+
+
 
 def mutate(abs_rdm_log_path: str, annot_f_traces_log_path:str, mut_path: str):
     """

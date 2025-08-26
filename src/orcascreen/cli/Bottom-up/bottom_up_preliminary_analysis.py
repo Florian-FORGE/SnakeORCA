@@ -13,6 +13,29 @@ import pandas as pd
 import random as rd
 
 
+"""
+This script produces a pdf file containing the analysis plots for a given run.
+It can be used as a command line tool or as a function in a python script.
+
+Usage :
+    python bottom_up_preliminary_analysis.py --expe_descrip "Description of the experiment" \
+                                             --run_path "path/to/run_file.tsv" 
+                                             --analysis_path "path/to/analysis_directory" 
+                                             --l_score_types "insulation_count,PC1" 
+                                             --l_resol "1Mb,2Mb,4Mb"
+                                             --show_compartments True
+
+Dependencies :
+    -matplotlib
+    -pandas
+    -orcascreen (custom library)
+
+Notes :
+    -The run file must be a tsv file with a header.
+    -The analysis directory will be created if it does not exist.
+"""
+
+
 def analysis_slide(expe_descrip: str, run_path: str, analysis_path:str, 
                    l_score_types: list, l_resol: list = None, 
                    show_compartments: bool = False):
