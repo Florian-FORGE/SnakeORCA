@@ -19,6 +19,8 @@ workdir: workingdir
 
 comp_expe_names = ",".join([f"{row['expe']}:{row['names']}" for _, row in experiments.iterrows()])
 
+last_file = resolve_path(f'{config["analysis_path_comp"]}/{config["output_file_comp"]}', workingdir)
+
 # --- Helper functions ---
 def mutable(wildcards=None):
     successful = []
@@ -124,7 +126,7 @@ rule valid:
     input:
         f"{output_repo}" + "/build.log",
         valid_expe,
-        f'"{config["analysis_path_comp"]}/{config["output_file_comp"]}"'
+        last_file
     
     output:
         f"{output_repo}" + "/valid_expe.log"
@@ -257,7 +259,7 @@ rule compare:
     input:
         comparable
     output:
-        f'"{config["analysis_path_comp"]}/{config["output_file_comp"]}"'
+        last_file
     params:
         descrip=f'"{config["descrip_comp"]}"',
         data_file=config["data_file_comp"],

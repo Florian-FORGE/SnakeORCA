@@ -227,9 +227,14 @@ def boxplot_slide(descrip: str, data_file: str, analysis_path:str, output_file: 
     
     # Remove '_rdm' suffix if present, using pandas vectorized string operations
     names = data["name"].astype(str).str.replace(r"_rdm$", "", regex=True).unique()
-    
-    # Build all_names using a list comprehension
-    all_names = [item for name in names for item in (name, f"{name}_rdm")]
+    all_names = data["name"].astype(str).unique()
+
+    name_dict = {}
+    for name in names :
+        if name not in name_dict :
+            name_dict[name] = 1
+        if f"{name}_rdm" in all_names :
+            name_dict[name] += 1
             
     if not os.path.exists(analysis_path):
         os.makedirs(analysis_path)
@@ -248,10 +253,16 @@ def boxplot_slide(descrip: str, data_file: str, analysis_path:str, output_file: 
         descrip = wrap_text(descrip, width=91)
         f.suptitle(f"\n{descrip}", fontsize=48)
 
-        ticks = [i +.5 for i in range(0, 2*len(names), 2)]
-        delim = [i +.5 for i in range(1, 2*len(names), 2)]
-
         if len(names) < 11 :
+            counts = [name_dict[name] for name in names]
+            cumulative = [0]
+            total = 0
+            for count in counts:
+                total += count/2
+                cumulative.append(total)
+            
+            delim = [i +1.5 for i in cumulative[:-2]]
+            ticks = [0.5] + [(delim[i] + delim[i+1])/2 for i in range(len(delim)-1)] + [delim[-1] + 0.5]
             name_wdth = 230//len(names)
             names = [wrap_text(name, width=name_wdth, sep="_") for name in names]
 
@@ -282,7 +293,7 @@ def boxplot_slide(descrip: str, data_file: str, analysis_path:str, output_file: 
                 if not leg :
                     ax.legend(handles, labels, loc='center left', bbox_to_anchor=(-.1, -.1), title="", fontsize=26)
                     leg = True
-
+            
             pdf.savefig()
             pdf.close()
         
@@ -309,10 +320,17 @@ def boxplot_slide(descrip: str, data_file: str, analysis_path:str, output_file: 
                     data_i = _data[_data["name"].isin(all_names_i)]
                     ax = f.add_subplot(gs[ax_i, 0:3]) if len(names_i) == 10 else f.add_subplot(gs[ax_i, 1])
 
-                    names_i = [wrap_text(name, width=name_wdth, sep="_") for name in names_i]
-                    ticks = [i +.5 for i in range(0, 2*len(names_i), 2)]
-                    delim = [i +.5 for i in range(1, 2*len(names_i), 2)]
+                    counts_i = [name_dict[name] for name in names_i]
+                    cumulative_i = []
+                    total = 0
+                    for count in counts_i:
+                        total += count
+                        cumulative_i.append(total)
+                    delim = [i +1.5 for i in cumulative_i[:-2]]
+                    ticks = [0.5] + [(delim[i] + delim[i+1])/2 for i in range(len(delim)-1)] + [delim[-1] + 0.5]
 
+                    names_i = [wrap_text(name, width=name_wdth, sep="_") for name in names_i]
+                    
                     boxenplot(data=data_i, x="name", y="values", hue="hue_name", ax=ax, width_method="linear")
 
                     for d in delim:
@@ -344,6 +362,12 @@ def boxplot_slide(descrip: str, data_file: str, analysis_path:str, output_file: 
                 new_page = True
             
             pdf.close()
+    
+    print(counts)
+    print(cumulative)
+    print(ticks)
+    print(delim)
+
 
 
 
