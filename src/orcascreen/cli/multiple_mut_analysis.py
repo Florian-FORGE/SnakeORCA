@@ -102,24 +102,24 @@ def extract_scores_data(resol: str, create: bool, data_file: str, rename:bool = 
         df_IS = mat_comparisons.extract_data(data_type="score", score_type="insulation_count", standard_dev=True)
 
         df_IS["run_name"] = df_IS["name"]
-        df_IS["name"] = df_IS["name"].apply(lambda name: f"merged_rdm" 
+        df_IS["name"] = df_IS["name"].apply(lambda name: f"Merged random" 
                                             if "rdm" in name.lower() 
-                                            else name)
+                                            else "Tested mutation")
         df_IS["hue_name"] = df_IS["name"]
         df_IS["name"] = df_IS["name"].apply(lambda name: f"{expe_name}_rdm" 
-                                            if name == "merged_rdm" 
+                                            if name == "Merged random" 
                                             else expe_name)
 
 
 
         df_PC1 = mat_comparisons.extract_data(data_type="score", score_type="PC1", standard_dev=True)
         df_PC1["run_name"] = df_PC1["name"]
-        df_PC1["name"] = df_PC1["name"].apply(lambda name: f"merged_rdm" 
+        df_PC1["name"] = df_PC1["name"].apply(lambda name: f"Merged random" 
                                             if "rdm" in name.lower() 
-                                            else name)
+                                            else "Tested mutation")
         df_PC1["hue_name"] = df_PC1["name"]
         df_PC1["name"] = df_PC1["name"].apply(lambda name: f"{expe_name}_rdm" 
-                                            if name == "merged_rdm" 
+                                            if name == "Merged random" 
                                             else expe_name)
 
         # Concatenate both DataFrames
@@ -362,11 +362,6 @@ def boxplot_slide(descrip: str, data_file: str, analysis_path:str, output_file: 
                 new_page = True
             
             pdf.close()
-    
-    print(counts)
-    print(cumulative)
-    print(ticks)
-    print(delim)
 
 
 
