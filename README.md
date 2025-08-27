@@ -21,14 +21,14 @@ python -c 'import torch; print(torch.cuda.is_available())'
 The last command should return True
 
 ```
-conda deactivate
+mamba deactivate
 mamba env update -f snakeorca_env_part2.yml
 ```
 
 Now install libstdcxx-ng==13.2.0 then pytabix :
 
 ```
-conda activate snakeorca_env
+mamba activate snakeorca_env
 mamba install conda-forge::libstdcxx-ng==13.2.0
 mamba install bioconda::pytabix
 ```
