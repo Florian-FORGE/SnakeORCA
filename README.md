@@ -55,7 +55,7 @@ python setup.py install
 **Installing snakemake**
 
 ```
-conda activate snakeorca_env
+mamba activate snakeorca_env
 mamba install -c conda-forge -c bioconda snakemake
 pip install snakemake-executor-plugin-slurm
 
