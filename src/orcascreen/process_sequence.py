@@ -7,7 +7,6 @@ import os
 
 import sys
 sys.path.append("/home/fforge/orca")
-sys.path.append("/home/miniforge3/envs/orca_env")
 import orca_predict # type: ignore
 from orca_utils import genomeplot # type: ignore
 from selene_sdk.sequences import Genome # type: ignore

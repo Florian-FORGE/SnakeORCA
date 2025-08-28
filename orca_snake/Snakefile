@@ -6,7 +6,6 @@ def resolve_path(path, base):
     return path if os.path.isabs(path) else os.path.join(base, path)
 
 # --- Load config and experiment table ---
-print(config["experiments"])
 experiment_file = resolve_path(config["experiments"], workflow.basedir)
 output_repo = config["output_repo"]
 

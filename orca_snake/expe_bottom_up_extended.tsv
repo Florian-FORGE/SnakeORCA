@@ -1,0 +1,4 @@
+expe	trace	expe_description	names	pseudonym
+Permut_inter	../test_resources/test_annot/bottom_up/trace_Permut_inter.csv	Two 640kb regions (between 11 and 12Mb and 19 and 20Mb)	Permut_inter	Pe
+Permut_intra	../test_resources/test_annot/bottom_up/trace_Permut_intra.csv	One 4Mb region between 13.8 and  18Mb	Permut_intra	Pa
+CTCF	../test_resources/test_annot/bottom_up/trace_KO_CTCF.csv	CTCF binding sites (multifuntional protein in genome regulation and gene expression)	CTCF	C

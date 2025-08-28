@@ -191,7 +191,7 @@ def parse_arguments():
                         required=False, help="The region in which the mutations are applied (needed for the same cases where the binsize is needed).")
 
     parser.add_argument("--order",
-                        required=False, help="Specify the order in which the bins should be arranged (only allowed if --mutationtype is set to 'permutations_inter').")
+                        required=False, help="Specify the order in which the bins should be arranged (only allowed if --mutationtype is set to 'permutations_intra').")
 
 
     args = parser.parse_args()

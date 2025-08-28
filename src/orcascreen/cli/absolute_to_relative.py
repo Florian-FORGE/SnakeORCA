@@ -204,9 +204,10 @@ def ref_seq_and_relative_bed(bed: str, tsv: str, fasta: str, mut_path: str, regi
         os.makedirs(output_path)
 
     chrom, start, end = region
+    start -= 1                  # Convert to 0-based for processing
     
     fasta_handle = FastaFile(fasta)
-    ref = fasta_handle.fetch(chrom, start-1, end)
+    ref = fasta_handle.fetch(chrom, start, end)
     seq_record = SeqRecord(Seq(ref).upper(), id=f"fake_{chrom}",
                                description=f"\t{(end-start)//1e6}Mb extracted "
                                            f"from {name}\tOffset (1-based) : {start}")

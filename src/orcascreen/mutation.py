@@ -32,7 +32,10 @@ where :
   strand: the strand of the insertion (if any)
   type: the type of mutation among : shuffle, inversion, mask and insertion
 
-If the mutation is of type insertion, the sequence must be a valid nucleotide string
+If the mutation is of type insertion, the sequence must be a valid nucleotide string.
+
+The trace method returns a dictionary with the following fields :
+    chrom, name, start (1-based), end (1-based), strand, operation, ref_seq, variant_seq, [bin_order/seq_order]
 
 """
 
@@ -60,8 +63,8 @@ class Mutation():
         self.op = operation
         if operation == "insertion":
             if not self._validinsertion(sequence):
-                raise ValueError("%s %d %d  %s %s is not a valid insertion sequence" %
-                                 (self.chrom, self.start, self.end, self.op, self.sequence))
+                seq_info = self.sequence if len(self.sequence)<10000 else f"len(sequence)={len(self.sequence)}"
+                raise ValueError(f"{self.chrom} {self.start} {self.end}  {self.op} {seq_info} is not a valid insertion sequence")
 
     @property
     def len(self):
@@ -141,7 +144,7 @@ class Mutator():
         return self.references
 
     def fetch(self, reference=None, start=None, end=None):
-        end = end + 1 if end is not None else end
+        # end = end + 1 if end is not None else end
         return  self.handle.fetch(reference=reference, start=start, end=end)
 
     def fetch_old(self, reference=None, start=None, end=None):
@@ -393,6 +396,8 @@ class Mutator():
                 trace["bin_order"] = mutation.bin_order
             elif mutation.op == "permutations_inter" :
                 trace["seq_order"] = mutation.bin_order
+
+            trace["start"] += 1  # in 1-based format
             data.append(trace)
         return pd.DataFrame(data)
 

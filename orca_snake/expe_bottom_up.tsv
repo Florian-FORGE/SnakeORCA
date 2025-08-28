@@ -1,7 +1,3 @@
 expe	trace	expe_description	names	pseudonym
-LINE	/work/user/fforge/work/resources/trace_bottom_up/trace_LINE.csv	Long Interspersed Nuclear Elements (LINE) - size over 3.5kb -	LINE	L
-SINE	/work/user/fforge/work/resources/trace_bottom_up/trace_SINE.csv	Small Interspersed Nuclear Elements (SINE) - size over 300pb -	SINE	S
-H3K4me1_ENCAN895IMP	/work/user/fforge/work/resources/trace_bottom_up/trace_H3K4me1.csv	H3K4me1 (Fixation site for active and primed enhancers)	H3K4me1	H1
-cds_free_smaller_phast_cons_highest_scores	/work/user/fforge/work/resources/trace_bottom_up/trace_Conserved_elts.csv	Conserved portions of 50pb -1% most conserved with CDS removed-	Conserved elements	Ce
-H3K9me3_ENCAN577WMG_q_val_over_5	/work/user/fforge/work/resources/trace_bottom_up/trace_H3K9me3.csv	H3K9me3 (Role in constitutive heterochomatin formation) -q-value < 10-5-	H3K9me3	H3
-CTCF	/work/user/fforge/work/resources/trace_bottom_up/trace_CTCF.csv	CTCF binding sites (multifuntional protein in genome regulation and gene expression)	CTCF	C
+Permut_inter	../test_resources/test_annot/bottom_up/trace_Permut_inter.csv	Two 640kb regions (between 11 and 12Mb and 19 and 20Mb)	Permut_inter	Pe
+CTCF	../test_resources/test_annot/bottom_up/trace_KO_CTCF.csv	CTCF binding sites (multifuntional protein in genome regulation and gene expression)	CTCF	C

@@ -2,10 +2,14 @@ import pandas as pd
 import os
 import itertools
 
+# Helper to resolve paths
+def resolve_path(path, base):
+    return path if os.path.isabs(path) else os.path.join(base, path)
+
 # --- Load config and experiment table ---
-experiment_file = config["experiments"]
+experiment_file = resolve_path(config["experiments"], workflow.basedir)
 output_repo = config["output_repo"]
-# print(output_repo)
+
 experiments = pd.read_csv(experiment_file, sep='\t', dtype={"expe": str}).set_index("expe", drop=False)
 expandable_abs_to_rel = f"{output_repo}" + "/{expe}/abs_to_rel.log"
 l_expe = experiments.index.tolist()
@@ -21,7 +25,7 @@ for i in range(1, len(l_pseudo)+1):
 workingdir = f"{workflow.basedir}/{config['workdir']}"
 workdir: workingdir
 
-traces = {row['pseudonym']: row['trace'] for _, row in experiments.iterrows()}
+traces = {row['pseudonym']: resolve_path(row['trace'], workflow.basedir) for _, row in experiments.iterrows()}
 comp_expe_names = ",".join([f"{row['pseudonym']}:{row['names']}" for _, row in experiments.iterrows()])
 
 # --- Helper functions ---
@@ -54,7 +58,6 @@ def mutate_log(wildcards=None):
 
 rule all:
     input:
-        # f"{output_repo}" + "/done.log"
         expand(f"{output_repo}/analysis" + "/{expe}/analysis.log", expe=combs),
         f"{output_repo}/analysis" + "/reference/analysis.log",
         f"{output_repo}/comparison.log"
@@ -68,7 +71,7 @@ rule abs_rdm:
         mut_path=f"{output_repo}/genome"
     shell:
         """
-        python ../scripts/snake_make/abs_rdm_genome.py \
+        abs_rdm_genome \
                --length {params.length} \
                --mut_path {params.mut_path}
         """
@@ -82,7 +85,7 @@ rule annot_f_traces:
         chrom_name=config["chrom_name"]
     shell:
         """
-        python ../scripts/snake_make/annot_from_traces.py \
+        annot_from_traces \
                --trace {params.trace} \
                --mut_path {params.mut_path} \
                --chrom_name {params.chrom_name}
@@ -100,7 +103,7 @@ checkpoint mutate:
         rm=f"{output_repo}/genome" + "/{expe}/relative_position_mutations.csv"
     shell:
         """
-        python ../scripts/snake_make/bottom_up_mutate.py \
+        bottom_up_mutate \
                --abs_rdm_log_path {input[0]} \
                --annot_f_traces_log_path  {input[1]} \
                --mut_path {params.mut_path}
@@ -130,7 +133,7 @@ rule predict:
         f'benchmarks/Bottom_up/{output_repo.split("/")[-1]}.tsv'
     shell:
         """
-        python ../scripts/snake_make/bottom_up_predict.py \
+        bottom_up_predict \
                --resol_model {params.resol_model} \
                --mutate_log_path {input.mut_log} \
                --mpos {params.mpos} \
@@ -152,7 +155,7 @@ rule analysis:
         expe_descrip=lambda wildcards : wildcards.expe
     shell:
         """
-        python ../scripts/snake_make/bottom_up_preliminary_analysis.py \
+        bottom_up_preliminary_analysis \
                --expe_descrip '{params.expe_descrip}' \
                --run_path {input} \
                --analysis_path {params.analysis_path} \
@@ -180,7 +183,7 @@ rule compare:
         rename_flag="--rename" if bool(config["rename"] == True) else ""
     shell:
         """
-        python ../scripts/snake_make/bottom_up_expe_compared.py \
+        bottom_up_expe_compared \
                --descrip {params.descrip} \
                --data_file {params.data_file} \
                --analysis_path {params.analysis_path} \
