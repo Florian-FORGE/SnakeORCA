@@ -116,18 +116,6 @@ pip install .
 
 ## Testing the installation
 
-```
-cd orca_snake
-
-conda activate snakeorca_env
-
-ORCA_DIR=PATH/TO/orca
-
-export PYTHONPATH="$ORCA_DIR":$PYTHONPATH
-
-```
-
-Change the the ORCA_DIR path to fit your setup.
 
 ### Testing the top-down pipeline
 
