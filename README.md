@@ -79,7 +79,7 @@ mkdir -p "$ENV_PATH/etc/conda/deactivate.d"
 Add PYTHONPATH export to activation script
 
 ```
-echo 'export PYTHONPATH="ORCA_DIR:$PYTHONPATH"' > "$ENV_PATH/etc/conda/activate.d/env_vars.sh"
+echo 'export PYTHONPATH="$ORCA_DIR:$PYTHONPATH"' > "$ENV_PATH/etc/conda/activate.d/env_vars.sh"
 
 ```
 
