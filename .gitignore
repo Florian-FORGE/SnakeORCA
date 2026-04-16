@@ -1,1 +1,33 @@
-README.md
+# IDE
+.vscode/
+
+# Sequence files
+*.fa
+*.fasta
+*.fq
+*.fastq
+
+# Build and output files
+orca
+build/
+src/
+
+# Workflow directories
+orca_snake/work/
+.snakemake/
+test_ressources/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+
+# Logs and outputs
+*.log
+*.out
+*.err
+
+# Snakemake
+*.snakemake
+*.snakeorca
