@@ -1,13 +1,15 @@
-## Installation instructions
+# Installation instructions
 
 ## Constructing a conda env
 
 Following the Orca installation instructions  
 https://github.com/jzhoulab/orca
 
-## Installing miniforge
+### Installing miniforge
 
 If you don't have it already, follow instructions from https://github.com/conda-forge/miniforge.
+
+## Installing the conda snake orca env
 
 ### Cloning SnakeOrca
 
@@ -16,10 +18,10 @@ git clone git@forge.inrae.fr:vincent.rocher/snakeorca.git
 cd snakeorca
 ```
 
-### Installing the conda snake orca env
+### Create and setup the virtual environment
 
 ```
-mamba env create -f snakeorca_env_part1.yml
+mamba env create -f snakeorca_env.yml
 mamba activate snakeorca_env
 pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128
 ```
@@ -31,15 +33,9 @@ python -c 'import torch; print(torch.cuda.is_available())'
 ```
 The last command should return True
 
-```
-mamba deactivate
-mamba env update -f snakeorca_env_part2.yml
-```
-
 Now install libstdcxx-ng==13.2.0 then pytabix :
 
 ```
-mamba activate snakeorca_env
 mamba install conda-forge::libstdcxx-ng==13.2.0
 mamba install bioconda::pytabix
 ```
@@ -104,6 +100,12 @@ pip install snakemake-executor-plugin-slurm
 mamba install conda-forge::plotnine
 ```
 
+**Installing pybedtools**
+
+```
+mamba install bioconda::pybedtools
+```
+
 ### Installing SnakeOrca
 
 ```
@@ -123,6 +125,7 @@ I you have access to genotoul, change the slurm_account in the config.yaml file 
 Then use :
 
 ```
+cd orca
 snakemake --configfile config.yaml --profile genotoul -j 3 -p -n
 
 ```
@@ -130,11 +133,12 @@ snakemake --configfile config.yaml --profile genotoul -j 3 -p -n
 Else use :
 
 ```
+cd orca
 snakemake --configfile config.yaml -j 3 -p -n
 
 ```
 
-(Without GPU it can take some time to tun the test pipeline (~1h), we recommand to proceed with GPU if possible.)
+(Without GPU it can take some time to run the test pipeline (~1h), we recommand to proceed with GPU if possible, or to go with 1 job at a time instead of 3.)
 
 **Remove the '-n' flag to run the pipeline, if the dry-run worked properly.**
 

@@ -1,0 +1,39 @@
+name: snakeorca_env
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+  - anaconda
+
+dependencies:
+  # Core Python & build tools
+  - python=3.11
+  - gcc
+  - cython
+  
+  # Data processing & analysis
+  - numpy
+  - scipy
+  - pandas
+  - scikit-learn
+  - statsmodels
+  
+  # Visualization
+  - matplotlib
+  - seaborn
+  - plotly
+  
+  # Bioinformatics & sequence tools
+  - cooltools
+  - pygenometracks
+  - pyranges
+  - pybigwig
+  
+  # Utilities
+  - docopt
+  - tqdm
+  - pip
+  
+  # PyTorch (CUDA 12.8) - via pip for better GPU support
+  - pip:
+    - seqstr
