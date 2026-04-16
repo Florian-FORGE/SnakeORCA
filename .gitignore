@@ -15,7 +15,7 @@ src/
 # Workflow directories
 orca_snake/work/
 .snakemake/
-test_ressources/
+*/test_annot/bottom_up/*
 
 # Python
 __pycache__/

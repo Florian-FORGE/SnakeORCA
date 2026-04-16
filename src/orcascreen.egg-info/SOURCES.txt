@@ -1,9 +1,5 @@
 README.md
 pyproject.toml
-orcascreen.egg-info/PKG-INFO
-orcascreen.egg-info/SOURCES.txt
-orcascreen.egg-info/dependency_links.txt
-orcascreen.egg-info/top_level.txt
 src/orcascreen/Cmap_orca.py
 src/orcascreen/Config_analyse.yaml
 src/orcascreen/Config_mut.yaml
@@ -16,6 +12,7 @@ src/orcascreen/mutate.py
 src/orcascreen/mutate_with_rdm.py
 src/orcascreen/mutation.py
 src/orcascreen/process_sequence.py
+src/orcascreen/process_sequence_1Mb.py
 src/orcascreen/reverse_mutate_module.py
 src/orcascreen.egg-info/PKG-INFO
 src/orcascreen.egg-info/SOURCES.txt
